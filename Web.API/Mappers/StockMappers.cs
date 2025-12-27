@@ -1,11 +1,13 @@
-﻿using Web.API.Dtos.Stock;
+﻿using System.Runtime.CompilerServices;
+using Web.API.Dtos.Stock;
 using Web.API.Models;
 
 namespace Web.API.Mappers
 {
     public static class StockMappers
     {
-        public static StockDto ToStockDto(this Stock stockModel)
+        //заповнення шаблону для відправлення "StockDto"
+        public static StockDto ToStockDto(this Stock stockModel) //приклеюється метод stockModel до Stock
         {
             return new StockDto
             {
@@ -16,6 +18,33 @@ namespace Web.API.Mappers
                 LastDiv = stockModel.LastDiv,
                 Industy = stockModel.Industy,
                 MarketCap = stockModel.MarketCap
+            };
+        }
+
+        //заповнення шаблону для створення об'єкту 
+        public static Stock ToStockFromCreateDTO(this CreateStockRequestDto stockDto)
+        {
+            return new Stock
+            {
+                Symbol = stockDto.Symbol,
+                CompanyName = stockDto.CompanyName,
+                Purchase = stockDto.Purchase,
+                LastDiv = stockDto.LastDiv,
+                MarketCap = stockDto.MarketCap,
+                Industy = stockDto.Industy
+            };
+        }
+
+        public static Stock ToStockFromCreateDtoLight(this CreateLightStockRequestDto stockDto)
+        {
+            return new Stock
+            {
+                CompanyName = stockDto.CompanyName,
+                Symbol = stockDto.Symbol,
+                Purchase = 0,
+                LastDiv = 0,
+                MarketCap = 0,
+                Industy = ""
             };
         }
 
