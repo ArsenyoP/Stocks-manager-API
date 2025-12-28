@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Web.API.Data;
 using Web.API.Dtos.Stock;
+using Web.API.Interfaces;
 using Web.API.Mappers;
 using Web.API.Models;
 
@@ -15,8 +16,10 @@ namespace Web.API.Controllers
     {
         //База даних
         private readonly ApplicationDBContext _context;
-        public StockController(ApplicationDBContext context)
+        private readonly IStockRepository _stockRepo;
+        public StockController(ApplicationDBContext context, IStockRepository stockRepo)
         {
+            _stockRepo = stockRepo;
             _context = context;
         }
 
@@ -24,18 +27,20 @@ namespace Web.API.Controllers
 
         //повертається JSON 
         [HttpGet]
+        //✅
         public async Task<IActionResult> GetAll()
         {
-            var stocks = await _context.Stocks.ToListAsync();
+            var stocks = await _stockRepo.GetAllAsync();
 
             var stockDto = stocks.Select(s => s.ToStockDto());
             return Ok(stockDto);
         }
 
         [HttpGet("{id}")]
+        //✅
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var stock = await _context.Stocks.FindAsync(id);
+            var stock = await _stockRepo.GetByIdAsync(id);
 
             if (stock == null)
             {
@@ -46,11 +51,10 @@ namespace Web.API.Controllers
         }
 
         [HttpGet("top")]
-
+        //✅
         public async Task<IActionResult> GetTop()
         {
-            var topStock = await _context.Stocks.OrderByDescending(s => -s.Purchase)
-                .FirstOrDefaultAsync();
+            var topStock = await _stockRepo.GetTopAsync();
             if (topStock == null)
             {
                 return NotFound();
@@ -59,9 +63,10 @@ namespace Web.API.Controllers
         }
 
         [HttpGet("symbol/{symbol}")]
+        //✅
         public async Task<IActionResult> GetBySymbol([FromRoute] string symbol)
         {
-            var stock = await _context.Stocks.FirstOrDefaultAsync(s => s.Symbol == symbol);
+            var stock = await _stockRepo.GetBySymbolAsync(symbol);
 
             if (stock == null)
             {
@@ -72,10 +77,10 @@ namespace Web.API.Controllers
         }
 
         [HttpGet("high-div")]
+        //✅
         public async Task<IActionResult> GetThreeGighrstDivedents()
         {
-            var threeHightDivs = await _context.Stocks
-                .OrderByDescending(s => s.LastDiv).Take(3).ToListAsync();
+            var threeHightDivs = await _stockRepo.GetThreeGighrstDivedentsAsync();
 
             if (!threeHightDivs.Any())
             {
@@ -92,21 +97,21 @@ namespace Web.API.Controllers
         // <--------POSTS-------->
 
         [HttpPost]
+        //✅
         public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto)
         {
             var stockModel = stockDto.ToStockFromCreateDTO();
-            await _context.Stocks.AddAsync(stockModel);
-            await _context.SaveChangesAsync();
+            await _stockRepo.CreateAsync(stockModel);
 
             return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel.ToStockDto());
         }
 
         [HttpPost("light")]
+        //✅
         public async Task<IActionResult> CreateLight([FromBody] CreateLightStockRequestDto stockDto)
         {
             var stockLight = stockDto.ToStockFromCreateDtoLight();
-            await _context.AddAsync(stockLight);
-            await _context.SaveChangesAsync();
+            await _stockRepo.CreateLightAsync(stockLight);
 
             return CreatedAtAction(nameof(GetById), new { id = stockLight.ID }, stockLight.ToStockDto());
         }
@@ -115,69 +120,50 @@ namespace Web.API.Controllers
 
         // <--------UPDATE-------->
         [HttpPut("{id}")]
+        //✅
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock)
         {
-            var stockModel = await _context.Stocks.FirstOrDefaultAsync(x => x.ID == id);
+            var stockModel = await _stockRepo.UpdateAsync(id, updateStock);
 
             if (stockModel == null)
             {
                 return NotFound();
             }
-
-            stockModel.Symbol = updateStock.Symbol;
-            stockModel.CompanyName = updateStock.CompanyName;
-            stockModel.MarketCap = updateStock.MarketCap;
-            stockModel.Purchase = updateStock.Purchase;
-            stockModel.Industy = updateStock.Industy;
-            stockModel.LastDiv = updateStock.LastDiv;
-            await _context.SaveChangesAsync();
 
             return Ok(stockModel.ToStockDto());
         }
 
 
         [HttpPut("{id}/update-symbol/")]
+        //✅
         public async Task<IActionResult> UpdateSymbol([FromRoute] int id, [FromBody] string symbol)
         {
-            var stockModel = await _context.Stocks.FirstOrDefaultAsync(x => x.ID == id);
+            var stockModel = await _stockRepo.UpdateSymbolAsync(id, symbol);
 
             if (stockModel == null)
             {
                 return NotFound();
             }
-
-            stockModel.Symbol = symbol;
-            await _context.SaveChangesAsync();
             return Ok();
         }
 
-
+        //✅
         [HttpPut("{id}/boost-dividents/")]
         public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent)
         {
-            var stockModel = await _context.Stocks.FirstOrDefaultAsync(x => x.ID == id);
+            var stockModel = await _stockRepo.BoostDividentsAsync(id, percent);
 
             if (stockModel == null)
             {
                 return NotFound();
             }
-
-            decimal updatedDevidents = stockModel.LastDiv * (percent / 100);
-            stockModel.LastDiv = stockModel.LastDiv += updatedDevidents;
-            await _context.SaveChangesAsync();
             return Ok();
         }
 
         [HttpPut("{id}/secure-update")]
+        //✅
         public async Task<IActionResult> SecureUpdate([FromRoute] int id, [FromBody] SecureUpdateDTO updateDTO)
         {
-            var stockModel = await _context.Stocks.FirstOrDefaultAsync(x => x.ID == id);
-
-            if (stockModel == null)
-            {
-                return NotFound();
-            }
-
             if (updateDTO.Purchase <= 0)
             {
                 return BadRequest("Price cant be less than 0");
@@ -188,9 +174,12 @@ namespace Web.API.Controllers
                 return BadRequest("Name can't be empty");
             }
 
-            stockModel.Purchase = updateDTO.Purchase;
-            stockModel.CompanyName = updateDTO.CompanyName;
-            await _context.SaveChangesAsync();
+            var stockModel = await _stockRepo.SecureUpdateAsync(id, updateDTO);
+
+            if (stockModel == null)
+            {
+                return NotFound();
+            }
 
             return Ok();
         }
@@ -198,19 +187,17 @@ namespace Web.API.Controllers
 
         // <--------DELETE-------->
         [HttpDelete("{id}")]
+        //✅
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var stockModel = await _context.Stocks.FirstOrDefaultAsync(x => x.ID == id);
+            var stockModel = await _stockRepo.DeleteAsync(id);
 
             if (stockModel == null)
             {
                 return NotFound();
             }
 
-            _context.Stocks.Remove(stockModel);
-            await _context.SaveChangesAsync();
-
             return NoContent();
-        }
+        } //✅
     }
 }

@@ -1,6 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
 using Web.API.Data;
+using Web.API.Interfaces;
+using Web.API.Repository;
 
 
 namespace Web.API
@@ -18,6 +20,8 @@ namespace Web.API
             builder.Services.AddDbContext<ApplicationDBContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddScoped<IStockRepository, StockRepository>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -28,11 +32,10 @@ namespace Web.API
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
+
+
 
             app.Run();
         }
