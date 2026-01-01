@@ -115,7 +115,7 @@ namespace Web.API.Repository
         public async Task<Stock?> BoostDividentsAsync(int id, decimal percent)
         {
             var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
-            
+
             if (stockModel == null)
             {
                 return null;
@@ -132,7 +132,7 @@ namespace Web.API.Repository
         {
             var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
 
-            if(stockModel == null)
+            if (stockModel == null)
             {
                 return null;
             }

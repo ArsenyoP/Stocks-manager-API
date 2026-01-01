@@ -15,12 +15,10 @@ namespace Web.API.Controllers
     public class StockController : ControllerBase
     {
         //База даних
-        private readonly ApplicationDBContext _context;
         private readonly IStockRepository _stockRepo;
-        public StockController(ApplicationDBContext context, IStockRepository stockRepo)
+        public StockController(IStockRepository stockRepo)
         {
             _stockRepo = stockRepo;
-            _context = context;
         }
 
         // <--------GETS-------->
