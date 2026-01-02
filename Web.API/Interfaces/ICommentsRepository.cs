@@ -6,5 +6,6 @@ namespace Web.API.Interfaces
     {
         Task<List<Comment>> GetAllAsync();
         Task<Comment?> GetById(int id);
+        Task<Comment?> CreateCommentAsync(Comment commentModel);
     }
 }

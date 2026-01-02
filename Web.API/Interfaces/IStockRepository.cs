@@ -17,6 +17,6 @@ namespace Web.API.Interfaces
         Task<Stock?> UpdateSymbolAsync(int id, string symbol);
         Task<Stock?> BoostDividentsAsync(int id, decimal percent);
         Task<Stock?> SecureUpdateAsync(int id, SecureUpdateDTO updateDto);
-
+        Task<bool> StockExists(int id);
     }
 }

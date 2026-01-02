@@ -18,17 +18,17 @@ namespace Web.API.Repository
 
         public async Task<List<Stock>> GetAllAsync()
         {
-            return await _contex.Stocks.ToListAsync();
+            return await _contex.Stocks.Include(s => s.Comments).ToListAsync();
         }
 
         public Task<Stock?> GetByIdAsync(int id)
         {
-            return _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id);
+            return _contex.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.ID == id);
         }
 
         public Task<Stock?> GetBySymbolAsync(string symbol)
         {
-            return _contex.Stocks.FirstOrDefaultAsync(s => s.Symbol == symbol);
+            return _contex.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.Symbol == symbol);
         }
 
         public async Task<Stock?> CreateAsync(Stock stockModel)
@@ -74,7 +74,7 @@ namespace Web.API.Repository
 
         public async Task<List<Stock>> GetThreeGighrstDivedentsAsync()
         {
-            var threeHightDivs = await _contex.Stocks.OrderByDescending(s => s.LastDiv)
+            var threeHightDivs = await _contex.Stocks.Include(s => s.Comments).OrderByDescending(s => s.LastDiv)
                 .Take(3).ToListAsync();
             if (threeHightDivs == null)
             {
@@ -86,7 +86,7 @@ namespace Web.API.Repository
 
         public async Task<Stock?> GetTopAsync()
         {
-            var topStock = await _contex.Stocks.OrderByDescending(s => s.Purchase)
+            var topStock = await _contex.Stocks.Include(s => s.Comments).OrderByDescending(s => s.Purchase)
                 .FirstOrDefaultAsync();
             if (topStock == null)
             {
@@ -150,6 +150,11 @@ namespace Web.API.Repository
             await _contex.Stocks.AddAsync(stockModel);
             await _contex.SaveChangesAsync();
             return stockModel;
+        }
+
+        public Task<bool> StockExists(int id)
+        {
+            return _contex.Stocks.AnyAsync(s => s.ID == id);
         }
     }
 }
