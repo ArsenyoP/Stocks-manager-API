@@ -29,5 +29,21 @@ namespace Web.API.Repository
         {
             return _context.Comments.FirstOrDefaultAsync(s => s.ID == id);
         }
+
+        public async Task<Comment?> UpdateCommentAsync(int id, Comment commentModel)
+        {
+            var existingComment = await _context.Comments.FirstOrDefaultAsync(s => s.ID == id);
+
+            if (existingComment == null)
+            {
+                return null;
+            }
+
+            existingComment.Title = commentModel.Title;
+            existingComment.Content = commentModel.Content;
+
+            await _context.SaveChangesAsync();
+            return existingComment;
+        }
     }
 }

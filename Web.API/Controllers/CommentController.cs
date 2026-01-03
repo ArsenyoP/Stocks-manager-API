@@ -38,7 +38,7 @@ namespace Web.API.Controllers
             {
                 return NotFound();
             }
-            return Ok(comment);
+            return Ok(comment.ToCommentDto());
         }
 
         [HttpPost("{stockId}")]
@@ -53,6 +53,19 @@ namespace Web.API.Controllers
             await _commentsRepo.CreateCommentAsync(commentModel);
 
             return CreatedAtAction(nameof(GetById), new { id = commentModel.ID }, commentModel.ToCommentDto());
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateComment([FromRoute] int id, UpdateCommentDto updateDto)
+        {
+            var comment = await _commentsRepo.UpdateCommentAsync(id, updateDto.ToCommentFromUpdate());
+
+            if (comment == null)
+            {
+                return NotFound("Comment was not found");
+            }
+
+            return Ok(comment.ToCommentDto());
         }
     }
 }
