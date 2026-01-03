@@ -72,7 +72,7 @@ namespace Web.API.Repository
             return stockModel;
         }
 
-        public async Task<List<Stock>> GetThreeGighrstDivedentsAsync()
+        public async Task<List<Stock>?> GetThreeGighrstDivedentsAsync()
         {
             var threeHightDivs = await _contex.Stocks.Include(s => s.Comments).OrderByDescending(s => s.LastDiv)
                 .Take(3).ToListAsync();

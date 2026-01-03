@@ -34,7 +34,7 @@ namespace Web.API.Controllers
             return Ok(stockDto);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         //✅
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
@@ -60,7 +60,7 @@ namespace Web.API.Controllers
             return Ok(topStock.ToStockDto());
         }
 
-        [HttpGet("symbol/{symbol}")]
+        [HttpGet("symbol/{symbol:alpha}")]
         //✅
         public async Task<IActionResult> GetBySymbol([FromRoute] string symbol)
         {
@@ -80,6 +80,11 @@ namespace Web.API.Controllers
         {
             var threeHightDivs = await _stockRepo.GetThreeGighrstDivedentsAsync();
 
+            if (threeHightDivs == null)
+            {
+                return NotFound("Акцій не знайдено");
+            }
+
             if (!threeHightDivs.Any())
             {
                 return NotFound("Акцій не знайдено");
@@ -98,6 +103,11 @@ namespace Web.API.Controllers
         //✅
         public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var stockModel = stockDto.ToStockFromCreateDTO();
             await _stockRepo.CreateAsync(stockModel);
 
@@ -108,6 +118,11 @@ namespace Web.API.Controllers
         //✅
         public async Task<IActionResult> CreateLight([FromBody] CreateLightStockRequestDto stockDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var stockLight = stockDto.ToStockFromCreateDtoLight();
             await _stockRepo.CreateLightAsync(stockLight);
 
@@ -117,10 +132,15 @@ namespace Web.API.Controllers
 
 
         // <--------UPDATE-------->
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         //✅
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var stockModel = await _stockRepo.UpdateAsync(id, updateStock);
 
             if (stockModel == null)
@@ -132,10 +152,15 @@ namespace Web.API.Controllers
         }
 
 
-        [HttpPut("{id}/update-symbol/")]
+        [HttpPut("{id:int}/update-symbol/")]
         //✅
         public async Task<IActionResult> UpdateSymbol([FromRoute] int id, [FromBody] string symbol)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var stockModel = await _stockRepo.UpdateSymbolAsync(id, symbol);
 
             if (stockModel == null)
@@ -146,9 +171,14 @@ namespace Web.API.Controllers
         }
 
         //✅
-        [HttpPut("{id}/boost-dividents/")]
+        [HttpPut("{id:int}/boost-dividents/")]
         public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var stockModel = await _stockRepo.BoostDividentsAsync(id, percent);
 
             if (stockModel == null)
@@ -158,10 +188,15 @@ namespace Web.API.Controllers
             return Ok();
         }
 
-        [HttpPut("{id}/secure-update")]
+        [HttpPut("{id:int}/secure-update")]
         //✅
         public async Task<IActionResult> SecureUpdate([FromRoute] int id, [FromBody] SecureUpdateDTO updateDTO)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (updateDTO.Purchase <= 0)
             {
                 return BadRequest("Price cant be less than 0");
@@ -184,7 +219,7 @@ namespace Web.API.Controllers
 
 
         // <--------DELETE-------->
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         //✅
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

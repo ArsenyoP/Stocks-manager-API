@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web.API.Dtos.Stock
 {
@@ -15,7 +16,12 @@ namespace Web.API.Dtos.Stock
 
     public class CreateLightStockRequestDto
     {
+        [Required]
+        [MaxLength(15, ErrorMessage = "Company name cannot be over 15 characters")]
         public string CompanyName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(10, ErrorMessage = "Symbol cannot be over 10 characters")]
         public string Symbol { get; set; } = string.Empty;
     }
 }

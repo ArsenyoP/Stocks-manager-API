@@ -11,7 +11,7 @@ namespace Web.API.Interfaces
         Task<Stock?> CreateAsync(Stock stockModel);
         Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto);
         Task<Stock?> DeleteAsync(int id);
-        Task<List<Stock>> GetThreeGighrstDivedentsAsync();
+        Task<List<Stock>?> GetThreeGighrstDivedentsAsync();
         Task<Stock?> GetTopAsync();
         Task<Stock?> CreateLightAsync(Stock stockModel);
         Task<Stock?> UpdateSymbolAsync(int id, string symbol);
