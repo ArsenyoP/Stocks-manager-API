@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Web.API.Data;
 using Web.API.Dtos.Stock;
+using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Mappers;
 using Web.API.Models;
@@ -26,9 +27,9 @@ namespace Web.API.Controllers
         //повертається JSON 
         [HttpGet]
         //✅
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
         {
-            var stocks = await _stockRepo.GetAllAsync();
+            var stocks = await _stockRepo.GetAllAsync(query);
 
             var stockDto = stocks.Select(s => s.ToStockDto());
             return Ok(stockDto);

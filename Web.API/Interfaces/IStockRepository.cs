@@ -1,11 +1,12 @@
 ﻿using Web.API.Dtos.Stock;
+using Web.API.Helpers;
 using Web.API.Models;
 
 namespace Web.API.Interfaces
 {
     public interface IStockRepository
     {
-        Task<List<Stock>> GetAllAsync();
+        Task<List<Stock>> GetAllAsync(QueryObject query);
         Task<Stock?> GetByIdAsync(int id);
         Task<Stock?> GetBySymbolAsync(string symbol);
         Task<Stock?> CreateAsync(Stock stockModel);

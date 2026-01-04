@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using Web.API.Data;
 using Web.API.Dtos.Stock;
+using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Models;
 
@@ -16,9 +17,29 @@ namespace Web.API.Repository
             _contex = context;
         }
 
-        public async Task<List<Stock>> GetAllAsync()
+        public async Task<List<Stock>> GetAllAsync(QueryObject query)
         {
-            return await _contex.Stocks.Include(s => s.Comments).ToListAsync();
+            var stocks = _contex.Stocks.Include(s => s.Comments).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.CompanyName))
+            {
+                stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Symbol))
+            {
+                stocks = stocks.Where(s => s.Symbol.Contains(query.Symbol));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
+                {
+                    stocks = query.IsDescending ? stocks.OrderByDescending(s => s.Symbol) : stocks.OrderBy(s => s.Symbol);
+                }
+            }
+
+            return await stocks.ToListAsync();
         }
 
         public Task<Stock?> GetByIdAsync(int id)
