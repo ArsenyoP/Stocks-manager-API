@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web.API.Models
 {
+    [Table("Comments")]
     public class Comment
     {
         public int ID { get; set; }

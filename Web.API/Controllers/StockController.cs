@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Web.API.Data;
@@ -26,6 +27,7 @@ namespace Web.API.Controllers
 
         //повертається JSON 
         [HttpGet]
+        [Authorize]
         //✅
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
         {
