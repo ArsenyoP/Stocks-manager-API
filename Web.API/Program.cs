@@ -102,6 +102,7 @@ namespace Web.API
             builder.Services.AddScoped<ICommentsRepository, CommentRepository>();
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IPorrfolioRepository, PortfolioRepository>();
 
             var app = builder.Build();
 
