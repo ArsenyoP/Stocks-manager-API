@@ -15,7 +15,7 @@ namespace Web.API.Mappers
                 ID = commentModel.ID,
                 StockID = commentModel.StockID,
                 Title = commentModel.Title,
-                CreatedBy = commentModel.AppUser.UserName
+                CreatedBy = commentModel.AppUser?.UserName ?? "Anonymous"
             };
         }
 

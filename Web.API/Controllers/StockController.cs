@@ -16,18 +16,14 @@ namespace Web.API.Controllers
 
     public class StockController : ControllerBase
     {
-        //База даних
+
         private readonly IStockRepository _stockRepo;
         public StockController(IStockRepository stockRepo)
         {
             _stockRepo = stockRepo;
         }
 
-        // <--------GETS-------->
-
-        //повертається JSON 
         [HttpGet]
-        //✅
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
         {
             var stocks = await _stockRepo.GetAllAsync(query);
@@ -37,72 +33,20 @@ namespace Web.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        //✅
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var stock = await _stockRepo.GetByIdAsync(id);
+            var stockModel = await _stockRepo.GetById(id);
 
-            if (stock == null)
+            if (stockModel == null)
             {
-                return NotFound();
+                return BadRequest("Can't find stock");
             }
 
-            return Ok(stock.ToStockDto());
+            return Ok(stockModel.ToStockDto());
         }
 
-        [HttpGet("top")]
-        //✅
-        public async Task<IActionResult> GetTop()
-        {
-            var topStock = await _stockRepo.GetTopAsync();
-            if (topStock == null)
-            {
-                return NotFound();
-            }
-            return Ok(topStock.ToStockDto());
-        }
-
-        [HttpGet("symbol/{symbol:alpha}")]
-        //✅
-        public async Task<IActionResult> GetBySymbol([FromRoute] string symbol)
-        {
-            var stock = await _stockRepo.GetBySymbolAsync(symbol);
-
-            if (stock == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(stock.ToStockDto());
-        }
-
-        [HttpGet("high-div")]
-        //✅
-        public async Task<IActionResult> GetThreeGighrstDivedents()
-        {
-            var threeHightDivs = await _stockRepo.GetThreeGighrstDivedentsAsync();
-
-            if (threeHightDivs == null)
-            {
-                return NotFound("Акцій не знайдено");
-            }
-
-            if (!threeHightDivs.Any())
-            {
-                return NotFound("Акцій не знайдено");
-            }
-
-            var threeHightDivsDto = threeHightDivs.Select(s => s.ToStockDto());
-
-            return Ok(threeHightDivsDto);
-        }
-
-
-
-        // <--------POSTS-------->
 
         [HttpPost]
-        //✅
         public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto)
         {
             if (!ModelState.IsValid)
@@ -116,26 +60,7 @@ namespace Web.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel.ToStockDto());
         }
 
-        [HttpPost("light")]
-        //✅
-        public async Task<IActionResult> CreateLight([FromBody] CreateLightStockRequestDto stockDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var stockLight = stockDto.ToStockFromCreateDtoLight();
-            await _stockRepo.CreateLightAsync(stockLight);
-
-            return CreatedAtAction(nameof(GetById), new { id = stockLight.ID }, stockLight.ToStockDto());
-        }
-
-
-
-        // <--------UPDATE-------->
         [HttpPut("{id:int}")]
-        //✅
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock)
         {
             if (!ModelState.IsValid)
@@ -153,26 +78,6 @@ namespace Web.API.Controllers
             return Ok(stockModel.ToStockDto());
         }
 
-
-        [HttpPut("{id:int}/update-symbol/")]
-        //✅
-        public async Task<IActionResult> UpdateSymbol([FromRoute] int id, [FromBody] string symbol)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var stockModel = await _stockRepo.UpdateSymbolAsync(id, symbol);
-
-            if (stockModel == null)
-            {
-                return NotFound();
-            }
-            return Ok();
-        }
-
-        //✅
         [HttpPut("{id:int}/boost-dividents/")]
         public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent)
         {
@@ -190,39 +95,7 @@ namespace Web.API.Controllers
             return Ok();
         }
 
-        [HttpPut("{id:int}/secure-update")]
-        //✅
-        public async Task<IActionResult> SecureUpdate([FromRoute] int id, [FromBody] SecureUpdateDTO updateDTO)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (updateDTO.Purchase <= 0)
-            {
-                return BadRequest("Price cant be less than 0");
-            }
-
-            if (string.IsNullOrWhiteSpace(updateDTO.CompanyName))
-            {
-                return BadRequest("Name can't be empty");
-            }
-
-            var stockModel = await _stockRepo.SecureUpdateAsync(id, updateDTO);
-
-            if (stockModel == null)
-            {
-                return NotFound();
-            }
-
-            return Ok();
-        }
-
-
-        // <--------DELETE-------->
         [HttpDelete("{id:int}")]
-        //✅
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var stockModel = await _stockRepo.DeleteAsync(id);
@@ -233,6 +106,6 @@ namespace Web.API.Controllers
             }
 
             return NoContent();
-        } //✅
+        }
     }
 }
