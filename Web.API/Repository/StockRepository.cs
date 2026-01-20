@@ -21,6 +21,11 @@ namespace Web.API.Repository
         {
             var stocks = _contex.Stocks.Include(s => s.Comments).ThenInclude(a => a.AppUser).AsQueryable();
 
+            if (query.Id.HasValue)
+            {
+                stocks = stocks.Where(s => s.ID == query.Id);
+            }
+
             if (!string.IsNullOrWhiteSpace(query.CompanyName))
             {
                 stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
@@ -43,16 +48,6 @@ namespace Web.API.Repository
 
 
             return await stocks.Skip(skipNumber).Take(query.PageSize).ToListAsync();
-        }
-
-        public Task<Stock?> GetByIdAsync(int id)
-        {
-            return _contex.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.ID == id);
-        }
-
-        public Task<Stock?> GetBySymbolAsync(string symbol)
-        {
-            return _contex.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.Symbol == symbol);
         }
 
         public async Task<Stock?> CreateAsync(Stock stockModel)
@@ -96,46 +91,6 @@ namespace Web.API.Repository
             return stockModel;
         }
 
-        public async Task<List<Stock>?> GetThreeGighrstDivedentsAsync()
-        {
-            var threeHightDivs = await _contex.Stocks.Include(s => s.Comments).OrderByDescending(s => s.LastDiv)
-                .Take(3).ToListAsync();
-            if (threeHightDivs == null)
-            {
-                return null;
-            }
-
-            return threeHightDivs;
-        }
-
-        public async Task<Stock?> GetTopAsync()
-        {
-            var topStock = await _contex.Stocks.Include(s => s.Comments).OrderByDescending(s => s.Purchase)
-                .FirstOrDefaultAsync();
-            if (topStock == null)
-            {
-                return null;
-            }
-
-            return topStock;
-        }
-
-
-        public async Task<Stock?> UpdateSymbolAsync(int id, string symbol)
-        {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            stockModel.Symbol = symbol;
-            await _contex.SaveChangesAsync();
-
-            return stockModel;
-        }
-
         public async Task<Stock?> BoostDividentsAsync(int id, decimal percent)
         {
             var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
@@ -152,33 +107,21 @@ namespace Web.API.Repository
             return stockModel;
         }
 
-        public async Task<Stock?> SecureUpdateAsync(int id, SecureUpdateDTO updateDto)
-        {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            stockModel.CompanyName = updateDto.CompanyName;
-            stockModel.Purchase = updateDto.Purchase;
-
-            await _contex.SaveChangesAsync();
-            return stockModel;
-        }
-
-
-        public async Task<Stock?> CreateLightAsync(Stock stockModel)
-        {
-            await _contex.Stocks.AddAsync(stockModel);
-            await _contex.SaveChangesAsync();
-            return stockModel;
-        }
-
         public Task<bool> StockExists(int id)
         {
             return _contex.Stocks.AnyAsync(s => s.ID == id);
+        }
+
+        public async Task<Stock?> GetBySymbolAsync(string symbol)
+        {
+            return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser).
+                FirstOrDefaultAsync(s => s.Symbol.ToLower() == symbol.ToLower());
+        }
+
+        public async Task<Stock?> GetById(int id)
+        {
+            return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser)
+                .FirstOrDefaultAsync(s => s.ID == id);
         }
     }
 }
