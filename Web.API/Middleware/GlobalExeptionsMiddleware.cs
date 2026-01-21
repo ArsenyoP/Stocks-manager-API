@@ -44,8 +44,7 @@ namespace Web.API.Middleware
 
     public static class GlobalExceptionsMiddlewareExtension
     {
-        public static IApplicationBuilder UseGlobalExceptions(
-            this IApplicationBuilder builder)
+        public static IApplicationBuilder UseGlobalExceptions(this IApplicationBuilder builder)
         {
             return builder.UseMiddleware<GlobalExceptionsMiddleware>();
         }

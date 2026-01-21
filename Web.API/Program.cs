@@ -108,6 +108,7 @@ namespace Web.API
             var app = builder.Build();
 
             app.UseGlobalExceptions();
+            app.UseRequestTiming();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
