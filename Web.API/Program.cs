@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Web.API.Data;
 using Web.API.Interfaces;
+using Web.API.Middleware;
 using Web.API.Models;
 using Web.API.Repository;
 using Web.API.Services;
@@ -105,6 +106,9 @@ namespace Web.API
             builder.Services.AddScoped<IPorrfolioRepository, PortfolioRepository>();
 
             var app = builder.Build();
+
+            app.UseGlobalExceptions();
+            app.UseRequestTiming();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
