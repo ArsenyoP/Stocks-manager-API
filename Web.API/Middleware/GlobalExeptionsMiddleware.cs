@@ -21,12 +21,20 @@ namespace Web.API.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Occured an error: {ex}");
+                if (ex is OperationCanceledException)
+                {
+                    _logger.LogInformation("Request was cancelled by the client.");
+                }
+                else
+                {
+                    _logger.LogError(ex, "An unhandled exception occurred.");
+                }
 
                 context.Response.StatusCode = ex switch
                 {
                     UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                     KeyNotFoundException => StatusCodes.Status404NotFound,
+                    OperationCanceledException => StatusCodes.Status499ClientClosedRequest,
                     InvalidOperationException or ArgumentException => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError
                 };
@@ -35,7 +43,7 @@ namespace Web.API.Middleware
                     new ProblemDetails
                     {
                         Type = ex.GetType().Name,
-                        Detail = "An error occured",
+                        Detail = ex.Message,
                         Status = context.Response.StatusCode
                     });
             }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Web.API.Dtos.Account;
 using Web.API.Interfaces;
@@ -27,54 +28,49 @@ namespace Web.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto register)
+        public async Task<IActionResult> Register([FromBody] RegisterDto register, CancellationToken ct)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+                return BadRequest(ModelState);
+            }
 
-                var appUser = new AppUser
-                {
-                    UserName = register.UserName,
-                    Email = register.Email
-                };
+            var appUser = new AppUser
+            {
+                UserName = register.UserName,
+                Email = register.Email
+            };
 
-                var createdUser = await _userManager.CreateAsync(appUser, register.Password);
+            var createdUser = await _userManager.CreateAsync(appUser, register.Password);
 
-                if (createdUser.Succeeded)
+            if (createdUser.Succeeded)
+            {
+                var roleResult = await _userManager.AddToRoleAsync(appUser, "User");
+                if (roleResult.Succeeded)
                 {
-                    var roleResult = await _userManager.AddToRoleAsync(appUser, "User");
-                    if (roleResult.Succeeded)
-                    {
-                        return Ok(
-                            new NewUserDto
-                            {
-                                UserName = appUser.UserName,
-                                Email = appUser.Email,
-                                Token = _tokenService.CreateToken(appUser)
-                            });
-                    }
-                    else
-                    {
-                        return StatusCode(500, roleResult.Errors);
-                    }
+                    return Ok(
+                        new NewUserDto
+                        {
+                            UserName = appUser.UserName,
+                            Email = appUser.Email,
+                            Token = _tokenService.CreateToken(appUser)
+                        });
                 }
                 else
                 {
-                    return StatusCode(500, createdUser.Errors);
+                    var errors = string.Join("; ", roleResult.Errors.Select(s => s.Description));
+                    throw new Exception($"Error while adding roled: {errors}");
                 }
             }
-            catch (Exception e)
+            else
             {
-                return StatusCode(500, e);
+                var errors = string.Join("; ", createdUser.Errors.Select(s => s.Description));
+                throw new Exception($"Error while creating user: {errors}");
             }
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
@@ -98,11 +94,13 @@ namespace Web.API.Controllers
         }
 
         [HttpGet]
-        public async Task<List<AccountDto>> GetAllAsync()
+        public async Task<IActionResult> GetAllAsync(CancellationToken ct)
         {
-            var accounts = await _accountRepository.GetAllAsync();
+            var accounts = await _accountRepository.GetAllAsync(ct);
 
-            return accounts.Select(s => s.FromAppUserToAccountDto()).ToList();
+            var accountDtos = accounts.Select(s => s.FromAppUserToAccountDto()).ToList();
+
+            return Ok(accountDtos);
         }
 
     }

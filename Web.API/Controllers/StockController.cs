@@ -24,18 +24,18 @@ namespace Web.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
+        public async Task<IActionResult> GetAll([FromQuery] QueryObject query, CancellationToken ct)
         {
-            var stocks = await _stockRepo.GetAllAsync(query);
+            var stocks = await _stockRepo.GetAllAsync(query, ct);
 
             var stockDto = stocks.Select(s => s.ToStockDto()).ToList();
             return Ok(stockDto);
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
         {
-            var stockModel = await _stockRepo.GetById(id);
+            var stockModel = await _stockRepo.GetById(id, ct);
 
             if (stockModel == null)
             {
@@ -47,7 +47,7 @@ namespace Web.API.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto)
+        public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
@@ -55,20 +55,21 @@ namespace Web.API.Controllers
             }
 
             var stockModel = stockDto.ToStockFromCreateDTO();
-            await _stockRepo.CreateAsync(stockModel);
+            await _stockRepo.CreateAsync(stockModel, ct);
 
             return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel.ToStockDto());
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock
+            , CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var stockModel = await _stockRepo.UpdateAsync(id, updateStock);
+            var stockModel = await _stockRepo.UpdateAsync(id, updateStock, ct);
 
             if (stockModel == null)
             {
@@ -79,30 +80,31 @@ namespace Web.API.Controllers
         }
 
         [HttpPut("{id:int}/boost-dividents/")]
-        public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent)
+        public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent,
+            CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var stockModel = await _stockRepo.BoostDividentsAsync(id, percent);
+            var stockModel = await _stockRepo.BoostDividentsAsync(id, percent, ct);
 
             if (stockModel == null)
             {
-                return NotFound();
+                throw new Exception("Can't find stock");
             }
             return Ok();
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
         {
-            var stockModel = await _stockRepo.DeleteAsync(id);
+            var stockModel = await _stockRepo.DeleteAsync(id, ct);
 
             if (stockModel == null)
             {
-                return NotFound();
+                throw new Exception("Can't find stock");
             }
 
             return NoContent();

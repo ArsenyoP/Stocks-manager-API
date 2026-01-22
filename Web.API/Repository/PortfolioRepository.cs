@@ -13,17 +13,17 @@ namespace Web.API.Repository
             _context = context;
         }
 
-        public async Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio)
+        public async Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio, CancellationToken ct)
         {
-            await _context.Portfolios.AddAsync(portfolio);
-            await _context.SaveChangesAsync();
+            await _context.Portfolios.AddAsync(portfolio, ct);
+            await _context.SaveChangesAsync(ct);
             return portfolio;
         }
 
-        public async Task<Portfolio> DeletePortfolioAsync(AppUser user, string symbol)
+        public async Task<Portfolio> DeletePortfolioAsync(AppUser user, string symbol, CancellationToken ct)
         {
             var portfolioModel = await _context.Portfolios.FirstOrDefaultAsync(
-                s => s.AppUserId == user.Id && s.Stock.Symbol.ToLower() == symbol.ToLower());
+                s => s.AppUserId == user.Id && s.Stock.Symbol.ToLower() == symbol.ToLower(), ct);
 
             if (portfolioModel == null)
             {
@@ -31,11 +31,11 @@ namespace Web.API.Repository
             }
 
             _context.Portfolios.Remove(portfolioModel);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
             return portfolioModel;
         }
 
-        public async Task<List<Stock>> GetUserPortfolio(AppUser user)
+        public async Task<List<Stock>> GetUserPortfolio(AppUser user, CancellationToken ct)
         {
             return await _context.Portfolios.Where(s => s.AppUserId == user.Id)
                 .Select(stock => new Stock
@@ -47,7 +47,7 @@ namespace Web.API.Repository
                     LastDiv = stock.Stock.LastDiv,
                     Industy = stock.Stock.Industy,
                     MarketCap = stock.Stock.MarketCap
-                }).ToListAsync();
+                }).ToListAsync(ct);
         }
     }
 }

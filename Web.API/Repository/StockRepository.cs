@@ -17,7 +17,7 @@ namespace Web.API.Repository
             _contex = context;
         }
 
-        public async Task<List<Stock>> GetAllAsync(QueryObject query)
+        public async Task<List<Stock>> GetAllAsync(QueryObject query, CancellationToken ct)
         {
             var stocks = _contex.Stocks.Include(s => s.Comments).ThenInclude(a => a.AppUser).AsQueryable();
 
@@ -47,19 +47,19 @@ namespace Web.API.Repository
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
 
-            return await stocks.Skip(skipNumber).Take(query.PageSize).ToListAsync();
+            return await stocks.Skip(skipNumber).Take(query.PageSize).ToListAsync(ct);
         }
 
-        public async Task<Stock?> CreateAsync(Stock stockModel)
+        public async Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct)
         {
-            await _contex.Stocks.AddAsync(stockModel);
-            await _contex.SaveChangesAsync();
+            await _contex.Stocks.AddAsync(stockModel, ct);
+            await _contex.SaveChangesAsync(ct);
             return stockModel;
         }
 
-        public async Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto)
+        public async Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto, CancellationToken ct)
         {
-            var exitingStock = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id);
+            var exitingStock = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
 
             if (exitingStock == null)
             {
@@ -73,13 +73,13 @@ namespace Web.API.Repository
             exitingStock.Industy = stockDto.Industy;
             exitingStock.LastDiv = stockDto.LastDiv;
 
-            await _contex.SaveChangesAsync();
+            await _contex.SaveChangesAsync(ct);
             return exitingStock;
         }
 
-        public async Task<Stock?> DeleteAsync(int id)
+        public async Task<Stock?> DeleteAsync(int id, CancellationToken ct)
         {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id);
+            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
 
             if (stockModel == null)
             {
@@ -87,13 +87,13 @@ namespace Web.API.Repository
             }
 
             _contex.Stocks.Remove(stockModel);
-            await _contex.SaveChangesAsync();
+            await _contex.SaveChangesAsync(ct);
             return stockModel;
         }
 
-        public async Task<Stock?> BoostDividentsAsync(int id, decimal percent)
+        public async Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct)
         {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id);
+            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id, ct);
 
             if (stockModel == null)
             {
@@ -103,25 +103,25 @@ namespace Web.API.Repository
             decimal updatedDevidents = stockModel.LastDiv * (percent / 100);
             stockModel.LastDiv = stockModel.LastDiv += updatedDevidents;
 
-            await _contex.SaveChangesAsync();
+            await _contex.SaveChangesAsync(ct);
             return stockModel;
         }
 
-        public Task<bool> StockExists(int id)
+        public Task<bool> StockExists(int id, CancellationToken ct)
         {
-            return _contex.Stocks.AnyAsync(s => s.ID == id);
+            return _contex.Stocks.AnyAsync(s => s.ID == id, ct);
         }
 
-        public async Task<Stock?> GetBySymbolAsync(string symbol)
+        public async Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken ct)
         {
             return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser).
-                FirstOrDefaultAsync(s => s.Symbol.ToLower() == symbol.ToLower());
+                FirstOrDefaultAsync(s => s.Symbol.ToLower() == symbol.ToLower(), ct);
         }
 
-        public async Task<Stock?> GetById(int id)
+        public async Task<Stock?> GetById(int id, CancellationToken ct)
         {
             return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser)
-                .FirstOrDefaultAsync(s => s.ID == id);
+                .FirstOrDefaultAsync(s => s.ID == id, ct);
         }
     }
 }
