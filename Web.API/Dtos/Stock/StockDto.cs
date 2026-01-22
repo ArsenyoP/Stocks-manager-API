@@ -17,10 +17,4 @@ namespace Web.API.Dtos.Stock
         public List<CommentDto> Comments { get; set; }
 
     }
-
-    public class SecureUpdateDTO
-    {
-        public string CompanyName { get; set; } = string.Empty;
-        public decimal Purchase { get; set; }
-    }
 }
