@@ -5,6 +5,7 @@ using Web.API.Dtos.Stock;
 using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Models;
+using Web.API.Dtos.Comment;
 
 namespace Web.API.Repository
 {
@@ -17,37 +18,60 @@ namespace Web.API.Repository
             _contex = context;
         }
 
-        public async Task<List<Stock>> GetAllAsync(QueryObject query, CancellationToken ct)
+        public async Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct)
         {
-            var stocks = _contex.Stocks.Include(s => s.Comments).ThenInclude(a => a.AppUser).AsQueryable();
+            var stocksQuery = _contex.Stocks.AsNoTracking();
 
             if (query.Id.HasValue)
             {
-                stocks = stocks.Where(s => s.ID == query.Id);
+                stocksQuery = stocksQuery.Where(s => s.ID == query.Id);
             }
 
             if (!string.IsNullOrWhiteSpace(query.CompanyName))
             {
-                stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
+                stocksQuery = stocksQuery.Where(s => s.CompanyName.Contains(query.CompanyName));
             }
 
             if (!string.IsNullOrWhiteSpace(query.Symbol))
             {
-                stocks = stocks.Where(s => s.Symbol.Contains(query.Symbol));
+                stocksQuery = stocksQuery.Where(s => s.Symbol.Contains(query.Symbol));
             }
 
             if (!string.IsNullOrWhiteSpace(query.SortBy))
             {
                 if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
                 {
-                    stocks = query.IsDescending ? stocks.OrderByDescending(s => s.Symbol) : stocks.OrderBy(s => s.Symbol);
+                    stocksQuery = query.IsDescending ? stocksQuery.OrderByDescending(s => s.Symbol) : stocksQuery.OrderBy(s => s.Symbol);
                 }
             }
 
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
 
-            return await stocks.Skip(skipNumber).Take(query.PageSize).ToListAsync(ct);
+            return await stocksQuery
+                .OrderBy(s => s.ID)
+                .Skip(skipNumber)
+                .Take(query.PageSize)
+                .Select(s => new StockDto
+                {
+                    ID = s.ID,
+                    CompanyName = s.CompanyName,
+                    Symbol = s.Symbol,
+                    Industy = s.Industy,
+                    LastDiv = s.LastDiv,
+                    MarketCap = s.MarketCap,
+                    Purchase = s.Purchase,
+                    Comments = s.Comments.OrderByDescending(t => t.CreatedOn)
+                    .Take(10).
+                    Select(c => new CommentDto
+                    {
+                        ID = c.ID,
+                        Title = c.Title,
+                        Content = c.Content,
+                        CreatedOn = c.CreatedOn,
+                        CreatedBy = c.AppUser.UserName
+                    }).ToList()
+                }).ToListAsync(ct);
         }
 
         public async Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct)

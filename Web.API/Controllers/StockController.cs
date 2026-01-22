@@ -26,10 +26,9 @@ namespace Web.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query, CancellationToken ct)
         {
-            var stocks = await _stockRepo.GetAllAsync(query, ct);
+            var stocksDto = await _stockRepo.GetAllAsync(query, ct);
 
-            var stockDto = stocks.Select(s => s.ToStockDto()).ToList();
-            return Ok(stockDto);
+            return Ok(stocksDto);
         }
 
         [HttpGet("{id:int}")]
