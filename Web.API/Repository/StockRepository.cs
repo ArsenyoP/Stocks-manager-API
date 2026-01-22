@@ -52,6 +52,7 @@ namespace Web.API.Repository
                 .OrderBy(s => s.ID)
                 .Skip(skipNumber)
                 .Take(query.PageSize)
+                .AsSplitQuery()
                 .Select(s => new StockDto
                 {
                     ID = s.ID,
