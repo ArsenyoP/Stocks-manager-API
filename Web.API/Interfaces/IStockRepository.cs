@@ -6,13 +6,13 @@ namespace Web.API.Interfaces
 {
     public interface IStockRepository
     {
-        Task<List<Stock>> GetAllAsync(QueryObject query);
-        Task<Stock?> GetBySymbolAsync(string symbol);
-        Task<Stock?> GetById(int id);
-        Task<Stock?> CreateAsync(Stock stockModel);
-        Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto);
-        Task<Stock?> DeleteAsync(int id);
-        Task<Stock?> BoostDividentsAsync(int id, decimal percent);
-        Task<bool> StockExists(int id);
+        Task<List<Stock>> GetAllAsync(QueryObject query, CancellationToken ct = default);
+        Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken ct = default);
+        Task<Stock?> GetById(int id, CancellationToken ct = default);
+        Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct = default);
+        Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto, CancellationToken ct = default);
+        Task<Stock?> DeleteAsync(int id, CancellationToken ct = default);
+        Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct = default);
+        Task<bool> StockExists(int id, CancellationToken ct = default);
     }
 }

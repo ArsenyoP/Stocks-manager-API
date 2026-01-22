@@ -25,25 +25,25 @@ namespace Web.API.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetUserPortfolio()
+        public async Task<IActionResult> GetUserPortfolio(CancellationToken ct)
         {
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
-            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(appUser); // list with stocks  
+            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(appUser, ct);
             return Ok(userPortfolio);
         }
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddPortfolio(string symbol)
+        public async Task<IActionResult> AddPortfolio(string symbol, CancellationToken ct)
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            var stock = await _stockRepo.GetBySymbolAsync(symbol);
+            var stock = await _stockRepo.GetBySymbolAsync(symbol, ct);
 
             if (stock == null) return BadRequest("Stock not found");
 
-            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(user);
+            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(user, ct);
 
             if (userPortfolio.Any(s => s.Symbol.ToLower() == symbol.ToLower())) return BadRequest("Can't add stock twice");
 
@@ -54,7 +54,7 @@ namespace Web.API.Controllers
                 AppUserId = user.Id
             };
 
-            await _porrfolioRepo.CreatePortfolioAsync(portfolioModel);
+            await _porrfolioRepo.CreatePortfolioAsync(portfolioModel, ct);
 
             if (portfolioModel == null)
             {
@@ -69,8 +69,9 @@ namespace Web.API.Controllers
 
         [HttpDelete]
         [Authorize]
-        public async Task<IActionResult> DeletePortfolio(string symbol)
+        public async Task<IActionResult> DeletePortfolio(string symbol, CancellationToken ct)
         {
+            //get id from claims
             var userName = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(userName);
 
@@ -80,11 +81,11 @@ namespace Web.API.Controllers
 
             if (filtredStock.Count() == 1)
             {
-                await _porrfolioRepo.DeletePortfolioAsync(appUser, symbol);
+                await _porrfolioRepo.DeletePortfolioAsync(appUser, symbol, ct);
             }
             else
             {
-                return BadRequest("Can't find stock");
+                throw new Exception("Can't find stock");
             }
 
             return Ok();

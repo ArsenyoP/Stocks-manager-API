@@ -13,9 +13,9 @@ namespace Web.API.Repository
             _context = context;
         }
 
-        public async Task<List<AppUser>> GetAllAsync()
+        public async Task<List<AppUser>> GetAllAsync(CancellationToken ct)
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Users.ToListAsync(ct);
         }
     }
 }
