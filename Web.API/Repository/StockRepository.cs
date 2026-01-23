@@ -18,61 +18,63 @@ namespace Web.API.Repository
             _contex = context;
         }
 
-        public async Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct)
+        public IQueryable<Stock> GetAllQuery(CancellationToken ct)
         {
             var stocksQuery = _contex.Stocks.AsNoTracking();
 
-            if (query.Id.HasValue)
-            {
-                stocksQuery = stocksQuery.Where(s => s.ID == query.Id);
-            }
+            return stocksQuery;
 
-            if (!string.IsNullOrWhiteSpace(query.CompanyName))
-            {
-                stocksQuery = stocksQuery.Where(s => s.CompanyName.Contains(query.CompanyName));
-            }
+            //if (query.Id.HasValue)
+            //{
+            //    stocksQuery = stocksQuery.Where(s => s.ID == query.Id);
+            //}
 
-            if (!string.IsNullOrWhiteSpace(query.Symbol))
-            {
-                stocksQuery = stocksQuery.Where(s => s.Symbol.Contains(query.Symbol));
-            }
+            //if (!string.IsNullOrWhiteSpace(query.CompanyName))
+            //{
+            //    stocksQuery = stocksQuery.Where(s => s.CompanyName.Contains(query.CompanyName));
+            //}
 
-            if (!string.IsNullOrWhiteSpace(query.SortBy))
-            {
-                if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
-                {
-                    stocksQuery = query.IsDescending ? stocksQuery.OrderByDescending(s => s.Symbol) : stocksQuery.OrderBy(s => s.Symbol);
-                }
-            }
+            //if (!string.IsNullOrWhiteSpace(query.Symbol))
+            //{
+            //    stocksQuery = stocksQuery.Where(s => s.Symbol.Contains(query.Symbol));
+            //}
 
-            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+            //if (!string.IsNullOrWhiteSpace(query.SortBy))
+            //{
+            //    if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        stocksQuery = query.IsDescending ? stocksQuery.OrderByDescending(s => s.Symbol) : stocksQuery.OrderBy(s => s.Symbol);
+            //    }
+            //}
+
+            //var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
 
-            return await stocksQuery
-                .OrderBy(s => s.ID)
-                .Skip(skipNumber)
-                .Take(query.PageSize)
-                .AsSplitQuery()
-                .Select(s => new StockDto
-                {
-                    ID = s.ID,
-                    CompanyName = s.CompanyName,
-                    Symbol = s.Symbol,
-                    Industy = s.Industy,
-                    LastDiv = s.LastDiv,
-                    MarketCap = s.MarketCap,
-                    Purchase = s.Purchase,
-                    Comments = s.Comments.OrderByDescending(t => t.CreatedOn)
-                    .Take(10).
-                    Select(c => new CommentDto
-                    {
-                        ID = c.ID,
-                        Title = c.Title,
-                        Content = c.Content,
-                        CreatedOn = c.CreatedOn,
-                        CreatedBy = c.AppUser.UserName
-                    }).ToList()
-                }).ToListAsync(ct);
+            //return await stocksQuery
+            //    .OrderBy(s => s.ID)
+            //    .Skip(skipNumber)
+            //    .Take(query.PageSize)
+            //    .AsSplitQuery()
+            //    .Select(s => new StockDto
+            //    {
+            //        ID = s.ID,
+            //        CompanyName = s.CompanyName,
+            //        Symbol = s.Symbol,
+            //        Industy = s.Industy,
+            //        LastDiv = s.LastDiv,
+            //        MarketCap = s.MarketCap,
+            //        Purchase = s.Purchase,
+            //        Comments = s.Comments.OrderByDescending(t => t.CreatedOn)
+            //        .Take(10).
+            //        Select(c => new CommentDto
+            //        {
+            //            ID = c.ID,
+            //            Title = c.Title,
+            //            Content = c.Content,
+            //            CreatedOn = c.CreatedOn,
+            //            CreatedBy = c.AppUser.UserName
+            //        }).ToList()
+            //    }).ToListAsync(ct);
         }
 
         public async Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct)
