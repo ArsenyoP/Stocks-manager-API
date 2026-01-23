@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Web.API.Data;
 using Web.API.Interfaces;
+using Web.API.Interfaces.IServices;
 using Web.API.Middleware;
 using Web.API.Models;
 using Web.API.Repository;
@@ -102,8 +103,11 @@ namespace Web.API
             builder.Services.AddScoped<IStockRepository, StockRepository>();
             builder.Services.AddScoped<ICommentsRepository, CommentRepository>();
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-            builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IPorrfolioRepository, PortfolioRepository>();
+
+            builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IStockService, StockService>();
+
 
             var app = builder.Build();
 

@@ -6,6 +6,7 @@ using Web.API.Data;
 using Web.API.Dtos.Stock;
 using Web.API.Helpers;
 using Web.API.Interfaces;
+using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
 using Web.API.Models;
 
@@ -18,15 +19,17 @@ namespace Web.API.Controllers
     {
 
         private readonly IStockRepository _stockRepo;
-        public StockController(IStockRepository stockRepo)
+        private readonly IStockService _stockService;
+        public StockController(IStockRepository stockRepo, IStockService stockService)
         {
             _stockRepo = stockRepo;
+            _stockService = stockService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query, CancellationToken ct)
         {
-            var stocksDto = await _stockRepo.GetAllAsync(query, ct);
+            var stocksDto = await _stockService.GetAllAsync(query, ct);
 
             return Ok(stocksDto);
         }

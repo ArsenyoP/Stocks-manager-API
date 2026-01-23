@@ -52,6 +52,10 @@ namespace Web.API.Data
             builder.Entity<Stock>()
                 .HasIndex(s => s.CompanyName);
 
+            builder.Entity<Stock>()
+                .HasIndex(s => new { s.LastDiv, s.MarketCap })
+                .HasDatabaseName("IX_Stocks_LastDiv_MarketCap");
+
 
 
             List<IdentityRole> roles = new List<IdentityRole>
