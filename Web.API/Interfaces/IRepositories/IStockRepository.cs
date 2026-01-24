@@ -6,9 +6,7 @@ namespace Web.API.Interfaces
 {
     public interface IStockRepository
     {
-        IQueryable<Stock> GetAllQuery(CancellationToken ct = default);
-        Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken ct = default);
-        Task<Stock?> GetById(int id, CancellationToken ct = default);
+        IQueryable<Stock> GetAllQuery();
         Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct = default);
         Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto, CancellationToken ct = default);
         Task<Stock?> DeleteAsync(int id, CancellationToken ct = default);
