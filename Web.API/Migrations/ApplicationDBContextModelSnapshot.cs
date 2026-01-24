@@ -51,13 +51,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "c798e1c5-51ac-44c1-8bd1-4e14dfc9a843",
+                            Id = "8bc4f963-fd27-4840-af49-1da14b26006f",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "98794c6e-8a61-4e77-97fa-fc402e0b0210",
+                            Id = "94f946c2-c301-41b3-97f0-5d99e17f574c",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -264,7 +264,11 @@ namespace Web.API.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.HasIndex("StockID");
+                    b.HasIndex("StockID", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_Comments_StockID_CreatedOn_Covering");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("StockID", "CreatedOn"), new[] { "Title", "Content", "AppUserId" });
 
                     b.ToTable("Comments");
                 });
@@ -278,6 +282,9 @@ namespace Web.API.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("AppUserId", "StockId");
+
+                    b.HasIndex("AppUserId")
+                        .HasDatabaseName("IX_Portfolio_AppUserId");
 
                     b.HasIndex("StockId");
 
@@ -294,7 +301,7 @@ namespace Web.API.Migrations
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Industy")
                         .IsRequired()
@@ -311,9 +318,17 @@ namespace Web.API.Migrations
 
                     b.Property<string>("Symbol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("CompanyName");
+
+                    b.HasIndex("Symbol")
+                        .IsUnique();
+
+                    b.HasIndex("LastDiv", "MarketCap")
+                        .HasDatabaseName("IX_Stocks_LastDiv_MarketCap");
 
                     b.ToTable("Stocks");
                 });

@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Web.API.Dtos.Comment;
 using Web.API.Dtos.Stock;
+using Web.API.Exceptions;
 using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
+using Web.API.Exceptions;
+using System.Diagnostics.SymbolStore;
 
 namespace Web.API.Services
 {
@@ -32,13 +35,15 @@ namespace Web.API.Services
 
             if (!string.IsNullOrWhiteSpace(query.Symbol))
             {
+                var symbolUpper = query.Symbol.ToUpper();
+
                 stockQuery = stockQuery.Where(s =>
-                    s.Symbol.ToLower().Contains(query.Symbol.ToLower()));
+                    s.Symbol.Contains(symbolUpper));
             }
 
             if (!string.IsNullOrWhiteSpace(query.SortBy))
             {
-                var sortBy = query.SortBy?.ToLower();
+                var sortBy = query.SortBy?.ToLower().Trim();
                 switch (sortBy)
                 {
                     case "symbol":
@@ -49,6 +54,9 @@ namespace Web.API.Services
                         break;
                     case "dividends":
                         stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.LastDiv) : stockQuery.OrderBy(s => s.LastDiv);
+                        break;
+                    case "marcetprice":
+                        stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.MarketCap) : stockQuery.OrderBy(s => s.MarketCap);
                         break;
                 }
             }
@@ -79,21 +87,46 @@ namespace Web.API.Services
                             Title = c.Title,
                             Content = c.Content,
                             CreatedOn = c.CreatedOn,
-                            CreatedBy = c.AppUser.UserName
+                            CreatedBy = c.AppUser.UserName ?? "Anonymous"
                         }).ToList()
                 })
-                .AsSplitQuery()
                 .ToListAsync(ct);
         }
 
-        public Task<StockDto> GetById(int id, CancellationToken ct = default)
+        public async Task<StockDto?> GetById(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
-        }
+            var stockQuery = _stockRepository.GetAllQuery();
 
-        public Task<StockDto> GetBySymbol(string symbol, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
+            var stock = await stockQuery.FirstOrDefaultAsync(s => s.ID == id, ct);
+
+            if (stock == null)
+            {
+                throw new NotFoundException($"Can't find stock with ID: {id}");
+            }
+
+            return await stockQuery
+                .Select(s => new StockDto
+                {
+                    ID = s.ID,
+                    CompanyName = s.CompanyName,
+                    Symbol = s.Symbol,
+                    Purchase = s.Purchase,
+                    LastDiv = s.LastDiv,
+                    Industy = s.Industy,
+                    MarketCap = s.MarketCap,
+                    Comments = s.Comments
+                        .OrderByDescending(t => t.CreatedOn)
+                        .Take(20)
+                        .Select(c => new CommentDto
+                        {
+                            ID = s.ID,
+                            Title = c.Title,
+                            Content = c.Content,
+                            CreatedBy = c.AppUser.UserName,
+                            CreatedOn = c.CreatedOn
+                        })
+                        .ToList()
+                }).FirstOrDefaultAsync(s => s.ID == id, ct);
         }
     }
 }

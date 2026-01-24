@@ -33,39 +33,40 @@ namespace Web.API.Controllers
             return Ok(userPortfolio);
         }
 
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> AddPortfolio(string symbol, CancellationToken ct)
-        {
-            var username = User.GetUsername();
-            var user = await _userManager.FindByNameAsync(username);
-            var stock = await _stockRepo.GetBySymbolAsync(symbol, ct);
+        //[HttpPost]
+        //[Authorize]
+        ////замість об'єктів получати ID акцій та користувачів
+        //public async Task<IActionResult> AddPortfolio(string symbol, CancellationToken ct)
+        //{
+        //    var username = User.GetUsername();
+        //    var user = await _userManager.FindByNameAsync(username);
+        //    var stock = await _stockRepo.GetBySymbolAsync(symbol, ct);
 
-            if (stock == null) return BadRequest("Stock not found");
+        //    if (stock == null) return BadRequest("Stock not found");
 
-            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(user, ct);
+        //    var userPortfolio = await _porrfolioRepo.GetUserPortfolio(user, ct);
 
-            if (userPortfolio.Any(s => s.Symbol.ToLower() == symbol.ToLower())) return BadRequest("Can't add stock twice");
+        //    if (userPortfolio.Any(s => s.Symbol.ToLower() == symbol.ToLower())) return BadRequest("Can't add stock twice");
 
 
-            var portfolioModel = new Portfolio
-            {
-                StockId = stock.ID,
-                AppUserId = user.Id
-            };
+        //    var portfolioModel = new Portfolio
+        //    {
+        //        StockId = stock.ID,
+        //        AppUserId = user.Id
+        //    };
 
-            await _porrfolioRepo.CreatePortfolioAsync(portfolioModel, ct);
+        //    await _porrfolioRepo.CreatePortfolioAsync(portfolioModel, ct);
 
-            if (portfolioModel == null)
-            {
-                return StatusCode(500, "Can't create");
-            }
-            else
-            {
-                return Created();
-            }
+        //    if (portfolioModel == null)
+        //    {
+        //        return StatusCode(500, "Can't create");
+        //    }
+        //    else
+        //    {
+        //        return Created();
+        //    }
 
-        }
+        //}
 
         [HttpDelete]
         [Authorize]

@@ -12,8 +12,8 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260122193011_AddCommentIndexes")]
-    partial class AddCommentIndexes
+    [Migration("20260123213846_AddStocksLastdivMarketcapIndexes")]
+    partial class AddStocksLastdivMarketcapIndexes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "87fe25d4-9ca3-4eec-b304-f57568be5434",
+                            Id = "8bc4f963-fd27-4840-af49-1da14b26006f",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "f4371960-768e-45b3-a2ab-787e70a3be93",
+                            Id = "94f946c2-c301-41b3-97f0-5d99e17f574c",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -267,7 +267,11 @@ namespace Web.API.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.HasIndex("StockID");
+                    b.HasIndex("StockID", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_Comments_StockID_CreatedOn_Covering");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("StockID", "CreatedOn"), new[] { "Title", "Content", "AppUserId" });
 
                     b.ToTable("Comments");
                 });
@@ -281,6 +285,9 @@ namespace Web.API.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("AppUserId", "StockId");
+
+                    b.HasIndex("AppUserId")
+                        .HasDatabaseName("IX_Portfolio_AppUserId");
 
                     b.HasIndex("StockId");
 
@@ -297,7 +304,7 @@ namespace Web.API.Migrations
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Industy")
                         .IsRequired()
@@ -314,9 +321,17 @@ namespace Web.API.Migrations
 
                     b.Property<string>("Symbol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("CompanyName");
+
+                    b.HasIndex("Symbol")
+                        .IsUnique();
+
+                    b.HasIndex("LastDiv", "MarketCap")
+                        .HasDatabaseName("IX_Stocks_LastDiv_MarketCap");
 
                     b.ToTable("Stocks");
                 });

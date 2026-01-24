@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Web.API.Data;
 using Web.API.Dtos.Stock;
+using Web.API.Exceptions;
 using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
@@ -37,14 +38,9 @@ namespace Web.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
         {
-            var stockModel = await _stockRepo.GetById(id, ct);
+            var stockModel = await _stockService.GetById(id, ct);
 
-            if (stockModel == null)
-            {
-                return BadRequest("Can't find stock");
-            }
-
-            return Ok(stockModel.ToStockDto());
+            return Ok(stockModel);
         }
 
 
