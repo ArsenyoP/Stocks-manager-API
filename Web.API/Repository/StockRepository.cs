@@ -81,7 +81,13 @@ namespace Web.API.Repository
             await _contex.SaveChangesAsync(ct);
             return stockModel;
         }
-
+        public async Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct)
+        {
+            return await _contex.Stocks
+                .Where(s => s.Symbol == symbol)
+                .Select(s => s.ID)
+                .FirstOrDefaultAsync(ct);
+        }
         public Task<bool> StockExists(int id, CancellationToken ct)
         {
             return _contex.Stocks.AnyAsync(s => s.ID == id, ct);

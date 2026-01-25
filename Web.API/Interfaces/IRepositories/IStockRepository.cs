@@ -12,5 +12,7 @@ namespace Web.API.Interfaces
         Task<Stock?> DeleteAsync(int id, CancellationToken ct = default);
         Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct = default);
         Task<bool> StockExists(int id, CancellationToken ct = default);
+        Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct = default);
+
     }
 }

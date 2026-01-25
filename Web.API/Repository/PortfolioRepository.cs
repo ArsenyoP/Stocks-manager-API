@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Web.API.Data;
+using Web.API.Dtos.Stock;
 using Web.API.Interfaces;
 using Web.API.Models;
 
@@ -13,6 +14,12 @@ namespace Web.API.Repository
             _context = context;
         }
 
+        public async Task<bool> CheckIfExistsAsync(string userID, int stockID, CancellationToken ct)
+        {
+            return await _context.Portfolios
+                .AnyAsync(p => p.StockId == stockID && p.AppUserId == userID, ct);
+        }
+
         public async Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio, CancellationToken ct)
         {
             await _context.Portfolios.AddAsync(portfolio, ct);
@@ -20,25 +27,16 @@ namespace Web.API.Repository
             return portfolio;
         }
 
-        public async Task<Portfolio> DeletePortfolioAsync(AppUser user, string symbol, CancellationToken ct)
+        public async Task DeletePortfolioAsync(Portfolio portfolio, CancellationToken ct)
         {
-            var portfolioModel = await _context.Portfolios.FirstOrDefaultAsync(
-                s => s.AppUserId == user.Id && s.Stock.Symbol.ToLower() == symbol.ToLower(), ct);
-
-            if (portfolioModel == null)
-            {
-                return null;
-            }
-
-            _context.Portfolios.Remove(portfolioModel);
+            _context.Portfolios.Remove(portfolio);
             await _context.SaveChangesAsync(ct);
-            return portfolioModel;
         }
 
-        public async Task<List<Stock>> GetUserPortfolio(AppUser user, CancellationToken ct)
+        public async Task<List<StockDto>> GetUserPortfolio(string userID, CancellationToken ct)
         {
-            return await _context.Portfolios.Where(s => s.AppUserId == user.Id)
-                .Select(stock => new Stock
+            return await _context.Portfolios.Where(s => s.AppUserId == userID)
+                .Select(stock => new StockDto
                 {
                     ID = stock.StockId,
                     Symbol = stock.Stock.Symbol,
@@ -46,8 +44,17 @@ namespace Web.API.Repository
                     Purchase = stock.Stock.Purchase,
                     LastDiv = stock.Stock.LastDiv,
                     Industy = stock.Stock.Industy,
-                    MarketCap = stock.Stock.MarketCap
+                    MarketCap = stock.Stock.MarketCap,
+
                 }).ToListAsync(ct);
         }
+
+        public async Task<Portfolio?> GetByIdAndSymbol(string userID, string symbolUpper, CancellationToken ct)
+        {
+            return await _context.Portfolios.FirstOrDefaultAsync(
+                s => s.AppUserId == userID && s.Stock.Symbol == symbolUpper, ct);
+        }
+
+
     }
 }
