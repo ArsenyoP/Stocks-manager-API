@@ -34,7 +34,7 @@ namespace Web.API.Controllers
         {
             var userID = User.GetUserID();
 
-            var userPortfolio = await _porrfolioRepo.GetUserPortfolio(userID, ct);
+            var userPortfolio = await _porfolioService.GetUserPortfolio(userID, ct);
             return Ok(userPortfolio);
         }
 
