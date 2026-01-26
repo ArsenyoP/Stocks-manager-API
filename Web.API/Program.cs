@@ -108,6 +108,7 @@ namespace Web.API
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IStockService, StockService>();
             builder.Services.AddScoped<IPorfolioService, PortfolioService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
 
 
             var app = builder.Build();
