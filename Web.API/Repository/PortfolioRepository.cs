@@ -33,20 +33,12 @@ namespace Web.API.Repository
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task<List<StockDto>> GetUserPortfolio(string userID, CancellationToken ct)
+        public async Task<List<Portfolio>> GetUserPortfolio(string userID, CancellationToken ct)
         {
-            return await _context.Portfolios.Where(s => s.AppUserId == userID)
-                .Select(stock => new StockDto
-                {
-                    ID = stock.StockId,
-                    Symbol = stock.Stock.Symbol,
-                    CompanyName = stock.Stock.CompanyName,
-                    Purchase = stock.Stock.Purchase,
-                    LastDiv = stock.Stock.LastDiv,
-                    Industy = stock.Stock.Industy,
-                    MarketCap = stock.Stock.MarketCap,
-
-                }).ToListAsync(ct);
+            return await _context.Portfolios
+                .Where(s => s.AppUserId == userID)
+                .Include(s => s.Stock)
+                .ToListAsync(ct);
         }
 
         public async Task<Portfolio?> GetByIdAndSymbol(string userID, string symbolUpper, CancellationToken ct)

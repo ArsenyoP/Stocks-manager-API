@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Web.API.Dtos.Stock;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
+using Web.API.Mappers;
 using Web.API.Models;
 
 namespace Web.API.Services
@@ -48,6 +50,13 @@ namespace Web.API.Services
             }
 
             await _porrfolioRepo.DeletePortfolioAsync(portfolioModel, ct);
+        }
+
+        public async Task<List<StockPortfolioDto>> GetUserPortfolio(string userID, CancellationToken ct = default)
+        {
+            var portfolio = await _porrfolioRepo.GetUserPortfolio(userID, ct);
+
+            return portfolio.Select(p => p.Stock.ToStockPortfolioDto()).ToList();
         }
     }
 }

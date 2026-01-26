@@ -5,7 +5,7 @@ namespace Web.API.Interfaces
 {
     public interface IPorrfolioRepository
     {
-        Task<List<StockDto>> GetUserPortfolio(string userID, CancellationToken ct = default);
+        Task<List<Portfolio>> GetUserPortfolio(string userID, CancellationToken ct = default);
         Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio, CancellationToken ct = default);
         Task DeletePortfolioAsync(Portfolio portfolio, CancellationToken ct = default);
         Task<bool> CheckIfExistsAsync(string userID, int stockID, CancellationToken ct = default);
