@@ -13,16 +13,13 @@ namespace Web.API.Controllers
     [ApiController]
     public class PortfolioController : ControllerBase
     {
-        private readonly IPorrfolioRepository _porrfolioRepo;
         private readonly UserManager<AppUser> _userManager;
         private readonly IStockRepository _stockRepo;
         private readonly IPorfolioService _porfolioService;
 
-        public PortfolioController(IPorrfolioRepository porrfolioRepo,
-            UserManager<AppUser> userManager, IStockRepository stockRepo,
+        public PortfolioController(UserManager<AppUser> userManager, IStockRepository stockRepo,
             IPorfolioService porfolioService)
         {
-            _porrfolioRepo = porrfolioRepo;
             _userManager = userManager;
             _stockRepo = stockRepo;
             _porfolioService = porfolioService;

@@ -9,10 +9,11 @@ namespace Web.API.Interfaces
         IQueryable<Stock> GetAllQuery();
         Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct = default);
         Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockDto, CancellationToken ct = default);
-        Task<Stock?> DeleteAsync(int id, CancellationToken ct = default);
-        Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct = default);
+        Task<Stock?> DeleteAsync(Stock stock, CancellationToken ct = default);
         Task<bool> StockExists(int id, CancellationToken ct = default);
         Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct = default);
+        Task<Stock?> GetByIdAsync(int id, CancellationToken ct);
+        Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct);
 
     }
 }

@@ -7,6 +7,7 @@ using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
 using Web.API.Exceptions;
 using System.Diagnostics.SymbolStore;
+using Web.API.Mappers;
 
 namespace Web.API.Services
 {
@@ -128,5 +129,44 @@ namespace Web.API.Services
                         .ToList()
                 }).FirstOrDefaultAsync(s => s.ID == id, ct);
         }
+
+        public async Task<StockDto> Update(int id, UpdateStockRequestDto updateStock, CancellationToken ct)
+        {
+            var existingWithSameSymbol = await _stockRepository.SymbolExists(updateStock.Symbol, id, ct);
+
+            if (existingWithSameSymbol)
+            {
+                throw new IdentityException("Stock with this symbol already exists");
+            }
+
+
+            var stockModel = await _stockRepository.UpdateAsync(id, updateStock, ct);
+
+            if (stockModel == null)
+            {
+                throw new KeyNotFoundException($"Stock with ID {id} not found");
+            }
+
+            return stockModel.ToStockDto();
+        }
+
+        public async Task<StockDto> Create(CreateStockRequestDto stockDto, CancellationToken ct)
+        {
+            var stockModel = stockDto.ToStockFromCreateDTO();
+            await _stockRepository.CreateAsync(stockModel, ct);
+            return stockModel.ToStockDto();
+        }
+
+        public async Task Delete(int id, CancellationToken ct)
+        {
+            var stockModel = await _stockRepository.GetByIdAsync(id, ct);
+
+            if (stockModel == null)
+            {
+                throw new KeyNotFoundException($"Can't find stock with ID: {id}");
+            }
+            await _stockRepository.DeleteAsync(stockModel, ct);
+        }
+
     }
 }

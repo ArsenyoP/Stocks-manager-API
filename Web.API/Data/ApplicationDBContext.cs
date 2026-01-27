@@ -33,6 +33,12 @@ namespace Web.API.Data
                 .WithMany(u => u.Portfolios)
                 .HasForeignKey(p => p.StockId);
 
+            builder.Entity<Comment>()
+                .HasOne(c => c.Stock)
+                .WithMany(s => s.Comments)
+                .HasForeignKey(c => c.StockID)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             //indexes for comments with included properties Title, Content, AppUserId
             builder.Entity<Comment>()
