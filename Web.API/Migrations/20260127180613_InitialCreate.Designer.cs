@@ -12,8 +12,8 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260123213846_AddStocksLastdivMarketcapIndexes")]
-    partial class AddStocksLastdivMarketcapIndexes
+    [Migration("20260127180613_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "8bc4f963-fd27-4840-af49-1da14b26006f",
+                            Id = "fd6938da-dac4-4289-9a54-ba3c5f068d0d",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "94f946c2-c301-41b3-97f0-5d99e17f574c",
+                            Id = "fcf08d48-82ef-4fbf-bc36-9c26251714f9",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -397,7 +397,8 @@ namespace Web.API.Migrations
 
                     b.HasOne("Web.API.Models.Stock", "Stock")
                         .WithMany("Comments")
-                        .HasForeignKey("StockID");
+                        .HasForeignKey("StockID")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("AppUser");
 

@@ -47,63 +47,25 @@ namespace Web.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var stockModel = await _stockService.Create(stockDto, ct);
 
-            var stockModel = stockDto.ToStockFromCreateDTO();
-            await _stockRepo.CreateAsync(stockModel, ct);
-
-            return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel.ToStockDto());
+            return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock
             , CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var stockModel = await _stockService.Update(id, updateStock, ct);
 
-            var stockModel = await _stockRepo.UpdateAsync(id, updateStock, ct);
-
-            if (stockModel == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(stockModel.ToStockDto());
+            return Ok(stockModel);
         }
 
-        [HttpPut("{id:int}/boost-dividents/")]
-        public async Task<IActionResult> BoostDividents([FromRoute] int id, [FromBody] decimal percent,
-            CancellationToken ct)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var stockModel = await _stockRepo.BoostDividentsAsync(id, percent, ct);
-
-            if (stockModel == null)
-            {
-                throw new Exception("Can't find stock");
-            }
-            return Ok();
-        }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
         {
-            var stockModel = await _stockRepo.DeleteAsync(id, ct);
-
-            if (stockModel == null)
-            {
-                throw new Exception("Can't find stock");
-            }
+            await _stockService.Delete(id, ct);
 
             return NoContent();
         }

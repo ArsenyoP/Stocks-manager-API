@@ -52,35 +52,13 @@ namespace Web.API.Repository
             return exitingStock;
         }
 
-        public async Task<Stock?> DeleteAsync(int id, CancellationToken ct)
+        public async Task<Stock?> DeleteAsync(Stock stock, CancellationToken ct)
         {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            _contex.Stocks.Remove(stockModel);
+            _contex.Stocks.Remove(stock);
             await _contex.SaveChangesAsync(ct);
-            return stockModel;
+            return stock;
         }
 
-        public async Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct)
-        {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id, ct);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            decimal updatedDevidents = stockModel.LastDiv * (percent / 100);
-            stockModel.LastDiv = stockModel.LastDiv += updatedDevidents;
-
-            await _contex.SaveChangesAsync(ct);
-            return stockModel;
-        }
         public async Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct)
         {
             return await _contex.Stocks
@@ -91,6 +69,17 @@ namespace Web.API.Repository
         public Task<bool> StockExists(int id, CancellationToken ct)
         {
             return _contex.Stocks.AnyAsync(s => s.ID == id, ct);
+        }
+
+        public async Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct)
+        {
+            return await _contex.Stocks
+                .AnyAsync(s => s.Symbol == symbol && s.ID != currentId, ct);
+        }
+
+        public async Task<Stock?> GetByIdAsync(int id, CancellationToken ct)
+        {
+            return await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
         }
     }
 }
