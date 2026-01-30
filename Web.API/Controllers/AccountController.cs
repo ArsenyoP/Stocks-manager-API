@@ -1,12 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using Web.API.Dtos.Account;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
-using Web.API.Models;
 
 namespace Web.API.Controllers
 {
@@ -41,11 +37,8 @@ namespace Web.API.Controllers
         public async Task<IActionResult> GetAllAsync(CancellationToken ct)
         {
             var accounts = await _accountRepository.GetAllAsync(ct);
-
             var accountDtos = accounts.Select(s => s.FromAppUserToAccountDto()).ToList();
-
             return Ok(accountDtos);
         }
-
     }
 }
