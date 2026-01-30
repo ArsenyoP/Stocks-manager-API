@@ -5,6 +5,7 @@ using Web.API.Dtos.Stock;
 using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Models;
+using Web.API.Dtos.Comment;
 
 namespace Web.API.Repository
 {
@@ -17,37 +18,11 @@ namespace Web.API.Repository
             _contex = context;
         }
 
-        public async Task<List<Stock>> GetAllAsync(QueryObject query, CancellationToken ct)
+        public IQueryable<Stock> GetAllQuery()
         {
-            var stocks = _contex.Stocks.Include(s => s.Comments).ThenInclude(a => a.AppUser).AsQueryable();
+            var stocksQuery = _contex.Stocks.AsNoTracking();
 
-            if (query.Id.HasValue)
-            {
-                stocks = stocks.Where(s => s.ID == query.Id);
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.CompanyName))
-            {
-                stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.Symbol))
-            {
-                stocks = stocks.Where(s => s.Symbol.Contains(query.Symbol));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.SortBy))
-            {
-                if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
-                {
-                    stocks = query.IsDescending ? stocks.OrderByDescending(s => s.Symbol) : stocks.OrderBy(s => s.Symbol);
-                }
-            }
-
-            var skipNumber = (query.PageNumber - 1) * query.PageSize;
-
-
-            return await stocks.Skip(skipNumber).Take(query.PageSize).ToListAsync(ct);
+            return stocksQuery;
         }
 
         public async Task<Stock?> CreateAsync(Stock stockModel, CancellationToken ct)
@@ -77,51 +52,34 @@ namespace Web.API.Repository
             return exitingStock;
         }
 
-        public async Task<Stock?> DeleteAsync(int id, CancellationToken ct)
+        public async Task<Stock?> DeleteAsync(Stock stock, CancellationToken ct)
         {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            _contex.Stocks.Remove(stockModel);
+            _contex.Stocks.Remove(stock);
             await _contex.SaveChangesAsync(ct);
-            return stockModel;
+            return stock;
         }
 
-        public async Task<Stock?> BoostDividentsAsync(int id, decimal percent, CancellationToken ct)
+        public async Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct)
         {
-            var stockModel = await _contex.Stocks.FirstOrDefaultAsync(x => x.ID == id, ct);
-
-            if (stockModel == null)
-            {
-                return null;
-            }
-
-            decimal updatedDevidents = stockModel.LastDiv * (percent / 100);
-            stockModel.LastDiv = stockModel.LastDiv += updatedDevidents;
-
-            await _contex.SaveChangesAsync(ct);
-            return stockModel;
+            return await _contex.Stocks
+                .Where(s => s.Symbol == symbol)
+                .Select(s => s.ID)
+                .FirstOrDefaultAsync(ct);
         }
-
         public Task<bool> StockExists(int id, CancellationToken ct)
         {
             return _contex.Stocks.AnyAsync(s => s.ID == id, ct);
         }
 
-        public async Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken ct)
+        public async Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct)
         {
-            return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser).
-                FirstOrDefaultAsync(s => s.Symbol.ToLower() == symbol.ToLower(), ct);
+            return await _contex.Stocks
+                .AnyAsync(s => s.Symbol == symbol && s.ID != currentId, ct);
         }
 
-        public async Task<Stock?> GetById(int id, CancellationToken ct)
+        public async Task<Stock?> GetByIdAsync(int id, CancellationToken ct)
         {
-            return await _contex.Stocks.Include(c => c.Comments).ThenInclude(a => a.AppUser)
-                .FirstOrDefaultAsync(s => s.ID == id, ct);
+            return await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
         }
     }
 }

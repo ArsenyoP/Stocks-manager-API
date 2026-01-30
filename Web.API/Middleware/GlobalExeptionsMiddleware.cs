@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Web.API.Exceptions;
 
 namespace Web.API.Middleware
 {
@@ -24,10 +25,11 @@ namespace Web.API.Middleware
                 if (ex is OperationCanceledException)
                 {
                     _logger.LogInformation("Request was cancelled by the client.");
+                    return;
                 }
                 else
                 {
-                    _logger.LogError(ex, "An unhandled exception occurred.");
+                    _logger.LogError(ex, "An exception occurred.");
                 }
 
                 context.Response.StatusCode = ex switch
@@ -36,6 +38,7 @@ namespace Web.API.Middleware
                     KeyNotFoundException => StatusCodes.Status404NotFound,
                     OperationCanceledException => StatusCodes.Status499ClientClosedRequest,
                     InvalidOperationException or ArgumentException => StatusCodes.Status400BadRequest,
+                    NotFoundException => StatusCodes.Status404NotFound,
                     _ => StatusCodes.Status500InternalServerError
                 };
 

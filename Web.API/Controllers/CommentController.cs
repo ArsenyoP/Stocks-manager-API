@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Web.API.Dtos.Comment;
 using Web.API.Extensions;
 using Web.API.Interfaces;
+using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
 using Web.API.Models;
 
@@ -17,91 +18,53 @@ namespace Web.API.Controllers
         private readonly ICommentsRepository _commentsRepo;
         private readonly IStockRepository _stockRepo;
         private readonly UserManager<AppUser> _userManager;
+        private readonly ICommentService _commentService;
         public CommentController(ICommentsRepository commentsRepo, IStockRepository stockRepo,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager, ICommentService commentService)
         {
             _commentsRepo = commentsRepo;
             _stockRepo = stockRepo;
             _userManager = userManager;
+            _commentService = commentService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll([FromQuery] int page, CancellationToken ct)
         {
+            var comments = await _commentService.GetAll(page, ct);
 
-            var comments = await _commentsRepo.GetAllAsync(ct);
-
-            var commentsDto = comments.Select(s => s.ToCommentDto());
-
-            return Ok(commentsDto);
+            return Ok(comments);
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
         {
-            var comment = await _commentsRepo.GetById(id, ct);
+            var commentDto = await _commentService.GetById(id, ct);
 
-            if (comment == null)
-            {
-                return NotFound();
-            }
-            return Ok(comment.ToCommentDto());
+            return Ok(commentDto);
         }
 
         [HttpPost("{stockId:int}")]
         [Authorize]
         public async Task<IActionResult> CreateComment([FromRoute] int stockId, CreateCommentDto commentDto, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var AppUserId = User.GetUserID();
 
-            if (!await _stockRepo.StockExists(stockId, ct))
-            {
-                return BadRequest("Stock does not exists");
-            }
-
-            var username = User.GetUsername();
-            var appUser = await _userManager.FindByNameAsync(username);
-
-            var commentModel = commentDto.ToCommentFromCreate(stockId);
-
-            commentModel.AppUserId = appUser.Id;
-
-            await _commentsRepo.CreateCommentAsync(commentModel, ct);
-
-            return CreatedAtAction(nameof(GetById), new { id = commentModel.ID }, commentModel.ToCommentDto());
+            var createdComment = await _commentService.CreateComment(stockId, AppUserId, commentDto, ct);
+            return CreatedAtAction(nameof(GetById), new { id = createdComment.ID }, createdComment);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateComment([FromRoute] int id, UpdateCommentDto updateDto, CancellationToken ct)
         {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var comment = await _commentsRepo.UpdateCommentAsync(id, updateDto.ToCommentFromUpdate(), ct);
-
-            if (comment == null)
-            {
-                return NotFound("Comment was not found");
-            }
-
-            return Ok(comment.ToCommentDto());
+            var commentDto = await _commentService.UpdateComment(id, updateDto, ct);
+            return Ok(commentDto);
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteComment([FromRoute] int id, CancellationToken ct)
         {
-            var comment = await _commentsRepo.DeleteAsync(id, ct);
-
-            if (comment == null)
-            {
-                return NotFound("Couldn't find comment");
-            }
+            await _commentService.DeleteComment(id, ct);
 
             return NoContent();
         }

@@ -12,8 +12,8 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260114204935_InitialFinalClean")]
-    partial class InitialFinalClean
+    [Migration("20260130185307_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "092891b1-ff8f-4710-9859-4cae5eed15ed",
+                            Id = "23954dd0-4754-4507-98a5-785a997d6f60",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "f7bc70e7-bb51-40c5-b4fa-e286675aaa13",
+                            Id = "7d7b2eb3-5bcd-4051-b4a5-39f95819dd8e",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -245,6 +245,10 @@ namespace Web.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
+                    b.Property<string>("AppUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -261,7 +265,16 @@ namespace Web.API.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("StockID");
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("CreatedOn")
+                        .HasDatabaseName("IX_Comments_CreatedOn");
+
+                    b.HasIndex("StockID", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_Comments_StockID_CreatedOn_Covering");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("StockID", "CreatedOn"), new[] { "Title", "Content", "AppUserId" });
 
                     b.ToTable("Comments");
                 });
@@ -275,6 +288,9 @@ namespace Web.API.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("AppUserId", "StockId");
+
+                    b.HasIndex("AppUserId")
+                        .HasDatabaseName("IX_Portfolio_AppUserId");
 
                     b.HasIndex("StockId");
 
@@ -291,7 +307,7 @@ namespace Web.API.Migrations
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Industy")
                         .IsRequired()
@@ -308,9 +324,17 @@ namespace Web.API.Migrations
 
                     b.Property<string>("Symbol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("CompanyName");
+
+                    b.HasIndex("Symbol")
+                        .IsUnique();
+
+                    b.HasIndex("LastDiv", "MarketCap")
+                        .HasDatabaseName("IX_Stocks_LastDiv_MarketCap");
 
                     b.ToTable("Stocks");
                 });
@@ -368,9 +392,18 @@ namespace Web.API.Migrations
 
             modelBuilder.Entity("Web.API.Models.Comment", b =>
                 {
+                    b.HasOne("Web.API.Models.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Web.API.Models.Stock", "Stock")
                         .WithMany("Comments")
-                        .HasForeignKey("StockID");
+                        .HasForeignKey("StockID")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("AppUser");
 
                     b.Navigation("Stock");
                 });

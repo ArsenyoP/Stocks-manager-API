@@ -22,7 +22,21 @@ namespace Web.API.Mappers
             };
         }
 
-        //заповнення шаблону для створення об'єкту 
+        public static StockPortfolioDto ToStockPortfolioDto(this Stock stockModel) //приклеюється метод stockModel до Stock
+        {
+            return new StockPortfolioDto
+            {
+                ID = stockModel.ID,
+                CompanyName = stockModel.CompanyName,
+                Symbol = stockModel.Symbol,
+                Purchase = stockModel.Purchase,
+                LastDiv = stockModel.LastDiv,
+                Industy = stockModel.Industy,
+                MarketCap = stockModel.MarketCap,
+            };
+        }
+
+
         public static Stock ToStockFromCreateDTO(this CreateStockRequestDto stockDto)
         {
             return new Stock

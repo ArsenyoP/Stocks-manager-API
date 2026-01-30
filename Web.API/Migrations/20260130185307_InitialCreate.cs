@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Web.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialFinalClean : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,8 +58,8 @@ namespace Web.API.Migrations
                 {
                     ID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Symbol = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyName = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Symbol = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Purchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LastDiv = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Industy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -185,16 +185,24 @@ namespace Web.API.Migrations
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    StockID = table.Column<int>(type: "int", nullable: true)
+                    StockID = table.Column<int>(type: "int", nullable: true),
+                    AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Comments", x => x.ID);
                     table.ForeignKey(
+                        name: "FK_Comments_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Comments_Stocks_StockID",
                         column: x => x.StockID,
                         principalTable: "Stocks",
-                        principalColumn: "ID");
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -226,8 +234,8 @@ namespace Web.API.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "092891b1-ff8f-4710-9859-4cae5eed15ed", null, "User", "USER" },
-                    { "f7bc70e7-bb51-40c5-b4fa-e286675aaa13", null, "Admin", "ADMIN" }
+                    { "23954dd0-4754-4507-98a5-785a997d6f60", null, "User", "USER" },
+                    { "7d7b2eb3-5bcd-4051-b4a5-39f95819dd8e", null, "Admin", "ADMIN" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -270,14 +278,47 @@ namespace Web.API.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_StockID",
+                name: "IX_Comments_AppUserId",
                 table: "Comments",
-                column: "StockID");
+                column: "AppUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_CreatedOn",
+                table: "Comments",
+                column: "CreatedOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_StockID_CreatedOn_Covering",
+                table: "Comments",
+                columns: new[] { "StockID", "CreatedOn" },
+                descending: new[] { false, true })
+                .Annotation("SqlServer:Include", new[] { "Title", "Content", "AppUserId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Portfolio_AppUserId",
+                table: "Portfolios",
+                column: "AppUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Portfolios_StockId",
                 table: "Portfolios",
                 column: "StockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stocks_CompanyName",
+                table: "Stocks",
+                column: "CompanyName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stocks_LastDiv_MarketCap",
+                table: "Stocks",
+                columns: new[] { "LastDiv", "MarketCap" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stocks_Symbol",
+                table: "Stocks",
+                column: "Symbol",
+                unique: true);
         }
 
         /// <inheritdoc />
