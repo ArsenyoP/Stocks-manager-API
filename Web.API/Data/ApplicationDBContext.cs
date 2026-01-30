@@ -40,12 +40,22 @@ namespace Web.API.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-            //indexes for comments with included properties Title, Content, AppUserId
+            builder.Entity<Comment>()
+                .HasIndex(c => c.CreatedOn)
+                .IsDescending(true)
+                .IncludeProperties(c => new { c.Title, c.Content, c.AppUserId })
+                .HasDatabaseName("IX_Comments_CreatedOn_Covering");
+
             builder.Entity<Comment>()
                 .HasIndex(c => new { c.StockID, c.CreatedOn })
                 .IsDescending(false, true)
                 .IncludeProperties(c => new { c.Title, c.Content, c.AppUserId })
                 .HasDatabaseName("IX_Comments_StockID_CreatedOn_Covering");
+
+
+
+
+
 
             builder.Entity<Portfolio>()
                 .HasIndex(c => new { c.AppUserId })

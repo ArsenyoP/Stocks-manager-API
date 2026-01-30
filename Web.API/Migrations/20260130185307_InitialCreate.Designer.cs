@@ -12,7 +12,7 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260127180613_InitialCreate")]
+    [Migration("20260130185307_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "fd6938da-dac4-4289-9a54-ba3c5f068d0d",
+                            Id = "23954dd0-4754-4507-98a5-785a997d6f60",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "fcf08d48-82ef-4fbf-bc36-9c26251714f9",
+                            Id = "7d7b2eb3-5bcd-4051-b4a5-39f95819dd8e",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -266,6 +266,9 @@ namespace Web.API.Migrations
                     b.HasKey("ID");
 
                     b.HasIndex("AppUserId");
+
+                    b.HasIndex("CreatedOn")
+                        .HasDatabaseName("IX_Comments_CreatedOn");
 
                     b.HasIndex("StockID", "CreatedOn")
                         .IsDescending(false, true)

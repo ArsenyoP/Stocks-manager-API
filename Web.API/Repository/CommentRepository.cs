@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Web.API.Data;
+using Web.API.Dtos.Comment;
 using Web.API.Interfaces;
 using Web.API.Models;
 
@@ -13,6 +14,11 @@ namespace Web.API.Repository
             _context = contex;
         }
 
+        public IQueryable<Comment> GetAllQuery(CancellationToken ct)
+        {
+            return _context.Comments.AsNoTracking();
+        }
+
         public async Task<Comment?> CreateCommentAsync(Comment commentModel, CancellationToken ct)
         {
             await _context.Comments.AddAsync(commentModel, ct);
@@ -20,23 +26,10 @@ namespace Web.API.Repository
             return commentModel;
         }
 
-        public async Task<Comment?> DeleteAsync(int id, CancellationToken ct)
+        public async Task DeleteAsync(Comment commentModel, CancellationToken ct)
         {
-            var comment = await _context.Comments.FirstOrDefaultAsync(s => s.ID == id, ct);
-
-            if (comment == null)
-            {
-                return null;
-            }
-
-            _context.Comments.Remove(comment);
+            _context.Comments.Remove(commentModel);
             await _context.SaveChangesAsync(ct);
-            return comment;
-        }
-
-        public async Task<List<Comment>> GetAllAsync(CancellationToken ct)
-        {
-            return await _context.Comments.Include(a => a.AppUser).ToListAsync(ct);
         }
 
         public Task<Comment?> GetById(int id, CancellationToken ct)
@@ -44,20 +37,13 @@ namespace Web.API.Repository
             return _context.Comments.Include(a => a.AppUser).FirstOrDefaultAsync(s => s.ID == id, ct);
         }
 
-        public async Task<Comment?> UpdateCommentAsync(int id, Comment commentModel, CancellationToken ct)
+        public async Task<Comment?> UpdateCommentAsync(Comment commentModel, UpdateCommentDto updateDto, CancellationToken ct)
         {
-            var existingComment = await _context.Comments.FirstOrDefaultAsync(s => s.ID == id, ct);
-
-            if (existingComment == null)
-            {
-                return null;
-            }
-
-            existingComment.Title = commentModel.Title;
-            existingComment.Content = commentModel.Content;
+            commentModel.Title = updateDto.Title;
+            commentModel.Content = updateDto.Content;
 
             await _context.SaveChangesAsync(ct);
-            return existingComment;
+            return commentModel;
         }
     }
 }
