@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using Web.API.Data;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
@@ -24,6 +25,12 @@ namespace Web.API
             // Services Configuration
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+
+            //setting up logging
+            builder.Host.UseSerilog((context, configuration) =>
+                configuration.ReadFrom.Configuration(context.Configuration));
+
+
 
             builder.Services.AddSwaggerGen(option =>
             {
