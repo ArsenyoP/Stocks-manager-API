@@ -29,7 +29,8 @@ namespace Web.API.Middleware
                 }
                 else
                 {
-                    _logger.LogError(ex, "An exception occurred.");
+                    _logger.LogError(ex, "Сталася помилка при обробці запиту на {@Path}. Повідомлення: {@ErrorMessage}",
+                         context.Request.Path.Value, ex.Message);
                 }
 
                 context.Response.StatusCode = ex switch

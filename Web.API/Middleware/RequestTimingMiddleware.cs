@@ -22,9 +22,9 @@ namespace Web.API.Middleware
 
             var requestTime = stopwatch.ElapsedMilliseconds;
 
-            _logger.LogInformation("Запит [{Method}] {Path} виконано за {Elapsed} мс",
+            _logger.LogInformation("Запит {@Method} {@Path} виконано за {@Elapsed} мс",
                 context.Request.Method,
-                context.Request.Path,
+                context.Request.Path.Value,
                 requestTime);
         }
     }
