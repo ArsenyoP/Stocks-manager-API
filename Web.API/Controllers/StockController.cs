@@ -18,12 +18,9 @@ namespace Web.API.Controllers
 
     public class StockController : ControllerBase
     {
-
-        private readonly IStockRepository _stockRepo;
         private readonly IStockService _stockService;
-        public StockController(IStockRepository stockRepo, IStockService stockService)
+        public StockController(IStockService stockService)
         {
-            _stockRepo = stockRepo;
             _stockService = stockService;
         }
 
