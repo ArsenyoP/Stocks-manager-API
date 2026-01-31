@@ -10,11 +10,14 @@ namespace Web.API.Services
     {
         private readonly ICommentsRepository _commentsRepo;
         private readonly IStockRepository _stockRepo;
+        private readonly ILogger<CommentService> _logger;
 
-        public CommentService(ICommentsRepository commentsRepo, IStockRepository stockRepo)
+        public CommentService(ICommentsRepository commentsRepo, IStockRepository stockRepo,
+            ILogger<CommentService> logger)
         {
             _commentsRepo = commentsRepo;
             _stockRepo = stockRepo;
+            _logger = logger;
         }
 
         public async Task<List<CommentDto>> GetAll(int page, CancellationToken ct)
@@ -60,6 +63,8 @@ namespace Web.API.Services
         {
             if (!await _stockRepo.StockExists(stockId, ct))
             {
+                _logger.LogWarning("User with ID {UserID} tried to create comment for non-existent" +
+                    "stock with ID {StockId}", AppUserId, stockId);
                 throw new KeyNotFoundException("Stock doesn't exists");
             }
 
@@ -69,6 +74,10 @@ namespace Web.API.Services
             commentModel.AppUserId = AppUserId;
 
             await _commentsRepo.CreateCommentAsync(commentModel, ct);
+
+            _logger.LogInformation("User with ID {UserIDd} created comment for stock with ID {StockId}",
+                AppUserId, stockId);
+
             return commentModel.ToCommentDto();
         }
 
@@ -78,10 +87,14 @@ namespace Web.API.Services
 
             if (existingComment == null)
             {
-                throw new KeyNotFoundException("Stock doesn't exists");
+                _logger.LogWarning("Attemp to modify comment  with ID {CommentID}",
+                    id);
+                throw new KeyNotFoundException("Comment doesn't exists");
             }
 
             existingComment = await _commentsRepo.UpdateCommentAsync(existingComment, updateDto, ct);
+            _logger.LogInformation("Updated comment with ID {CommentId}", id);
+
             return existingComment.ToCommentDto();
 
         }
@@ -93,9 +106,13 @@ namespace Web.API.Services
 
             if (commentModel == null)
             {
+                _logger.LogWarning("Attemp to delete non-existent comment with ID {CommentId}",
+                    id);
                 throw new KeyNotFoundException("Stock doesn't exists");
             }
 
+            _logger.LogInformation("Deleted comment with ID {CommentId}",
+                    id);
             await _commentsRepo.DeleteAsync(commentModel, ct);
         }
     }

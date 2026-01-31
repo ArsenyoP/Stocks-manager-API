@@ -14,9 +14,12 @@ namespace Web.API.Services
     public class StockService : IStockService
     {
         private readonly IStockRepository _stockRepository;
-        public StockService(IStockRepository stockRepository)
+        private readonly ILogger<StockService> _logger;
+
+        public StockService(IStockRepository stockRepository, ILogger<StockService> logger)
         {
             _stockRepository = stockRepository;
+            _logger = logger;
         }
 
         public async Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct = default)
@@ -132,28 +135,41 @@ namespace Web.API.Services
 
         public async Task<StockDto> Update(int id, UpdateStockRequestDto updateStock, CancellationToken ct)
         {
-            var existingWithSameSymbol = await _stockRepository.SymbolExists(updateStock.Symbol, id, ct);
+            var symbolUpper = updateStock.Symbol.ToUpper().Trim();
+            var existingWithSameSymbol = await _stockRepository.SymbolExists(symbolUpper, id, ct);
 
             if (existingWithSameSymbol)
             {
+                _logger.LogWarning("Update stock failed: Symbol {Symbol} is already taken by another stock.", symbolUpper);
                 throw new IdentityException("Stock with this symbol already exists");
             }
-
 
             var stockModel = await _stockRepository.UpdateAsync(id, updateStock, ct);
 
             if (stockModel == null)
             {
+                _logger.LogWarning("Update stock failed: Stock with ID {StockId} not found", id);
                 throw new KeyNotFoundException($"Stock with ID {id} not found");
             }
 
+            _logger.LogInformation("Stock with ID {StockId} was successfully updated to symbol {Symbol}", id, symbolUpper);
             return stockModel.ToStockDto();
         }
 
+        //check if stock exists
         public async Task<StockDto> Create(CreateStockRequestDto stockDto, CancellationToken ct)
         {
+            bool symbolExists = await _stockRepository.SymbolExists(stockDto.Symbol, 0, ct);
+            if (symbolExists)
+            {
+                _logger.LogWarning("Create stock failed: Symbol {Symbol} already exists", stockDto.Symbol);
+                throw new ArgumentException($"Stock with ssymbol {stockDto.Symbol} already exists");
+            }
+
             var stockModel = stockDto.ToStockFromCreateDTO();
             await _stockRepository.CreateAsync(stockModel, ct);
+
+            _logger.LogInformation("New stock created: {Symbol} with ID {StockID}", stockModel.Symbol, stockModel.ID);
             return stockModel.ToStockDto();
         }
 
@@ -163,9 +179,12 @@ namespace Web.API.Services
 
             if (stockModel == null)
             {
+                _logger.LogWarning("Delete stock failed: Stock with ID {StockId} not found", id);
                 throw new KeyNotFoundException($"Can't find stock with ID: {id}");
             }
             await _stockRepository.DeleteAsync(stockModel, ct);
+
+            _logger.LogInformation("Stock {Symbol} (ID: {StockId}) was successfully deleted", stockModel.Symbol, id);
         }
 
     }

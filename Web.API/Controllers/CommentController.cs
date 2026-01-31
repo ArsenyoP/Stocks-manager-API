@@ -15,16 +15,9 @@ namespace Web.API.Controllers
 
     public class CommentController : ControllerBase
     {
-        private readonly ICommentsRepository _commentsRepo;
-        private readonly IStockRepository _stockRepo;
-        private readonly UserManager<AppUser> _userManager;
         private readonly ICommentService _commentService;
-        public CommentController(ICommentsRepository commentsRepo, IStockRepository stockRepo,
-            UserManager<AppUser> userManager, ICommentService commentService)
+        public CommentController(ICommentService commentService)
         {
-            _commentsRepo = commentsRepo;
-            _stockRepo = stockRepo;
-            _userManager = userManager;
             _commentService = commentService;
         }
 

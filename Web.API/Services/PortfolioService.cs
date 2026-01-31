@@ -12,11 +12,13 @@ namespace Web.API.Services
     {
         private readonly IPorrfolioRepository _porrfolioRepo;
         private readonly IStockRepository _stockRepo;
+        private readonly ILogger<PortfolioService> _logger;
 
-        public PortfolioService(IPorrfolioRepository porrfolioRepo, IStockRepository stockRepo)
+        public PortfolioService(IPorrfolioRepository porrfolioRepo, IStockRepository stockRepo, ILogger<PortfolioService> logger)
         {
             _porrfolioRepo = porrfolioRepo;
             _stockRepo = stockRepo;
+            _logger = logger;
         }
 
         public async Task<Portfolio> AddToPortfolio(string symbol, string userID, CancellationToken ct)
@@ -24,10 +26,22 @@ namespace Web.API.Services
             var symbolUpper = symbol.ToUpper();
             var stockID = await _stockRepo.GetIdBySymbolAsync(symbolUpper);
 
-            if (stockID == 0) throw new KeyNotFoundException($"Can't find stock with symbol: {symbol}");
+            if (stockID == 0)
+            {
+                _logger.LogWarning("User with ID: {UserID} tried to add to portfolio" +
+                    "non-existent stock with symnol: {Symbol}",
+                    userID, symbol);
+                throw new KeyNotFoundException($"Can't find stock with symbol: {symbol}");
+            }
 
             var isExists = await _porrfolioRepo.CheckIfExistsAsync(userID, stockID, ct);
-            if (isExists) throw new ArgumentException("Can't add stock twice");
+            if (isExists)
+            {
+                _logger.LogWarning("User with ID: {UserID} tried to add to portfolio" +
+                    "repetitive stock with id: {StockID}",
+                    userID, stockID);
+                throw new ArgumentException("Can't add stock twice");
+            }
 
             var portfolioModel = new Portfolio
             {
@@ -35,6 +49,10 @@ namespace Web.API.Services
                 AppUserId = userID
             };
             await _porrfolioRepo.CreatePortfolioAsync(portfolioModel, ct);
+            _logger.LogInformation("User with ID: {UserID} added to portfolio" +
+                    "stock with id: {StockID}",
+                    userID, stockID);
+
             return portfolioModel;
         }
 
@@ -46,10 +64,15 @@ namespace Web.API.Services
 
             if (portfolioModel == null)
             {
+                _logger.LogWarning("Delete portfolio item failed: Stock {Symbol} not found in portfolio for user {UserId}",
+                    symbolUpper, userID);
                 throw new KeyNotFoundException($"Can't find stock with symbol: {symbol}");
             }
 
             await _porrfolioRepo.DeletePortfolioAsync(portfolioModel, ct);
+
+            _logger.LogInformation("Stock {Symbol} was successfully removed from portfolio of user {UserId}",
+                symbolUpper, userID);
         }
 
         public async Task<List<StockPortfolioDto>> GetUserPortfolio(string userID, CancellationToken ct = default)
