@@ -51,16 +51,24 @@ namespace Web.API.Services
                 switch (sortBy)
                 {
                     case "symbol":
-                        stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.Symbol) : stockQuery.OrderBy(s => s.Symbol);
+                        stockQuery = query.IsDescending
+                            ? stockQuery.OrderByDescending(s => s.Symbol).ThenByDescending(x => x.ID)
+                                : stockQuery.OrderBy(s => s.Symbol).ThenBy(x => x.ID);
                         break;
                     case "name":
-                        stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.CompanyName) : stockQuery.OrderBy(s => s.CompanyName);
+                        stockQuery = query.IsDescending
+                            ? stockQuery.OrderByDescending(s => s.CompanyName).ThenByDescending(x => x.ID)
+                                : stockQuery.OrderBy(s => s.CompanyName).ThenBy(x => x.ID);
                         break;
                     case "dividends":
-                        stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.LastDiv) : stockQuery.OrderBy(s => s.LastDiv);
+                        stockQuery = query.IsDescending
+                            ? stockQuery.OrderByDescending(s => s.LastDiv).ThenByDescending(x => x.ID)
+                                : stockQuery.OrderBy(s => s.LastDiv).ThenBy(x => x.ID);
                         break;
                     case "marcetprice":
-                        stockQuery = query.IsDescending ? stockQuery.OrderByDescending(s => s.MarketCap) : stockQuery.OrderBy(s => s.MarketCap);
+                        stockQuery = query.IsDescending
+                            ? stockQuery.OrderByDescending(s => s.MarketCap).ThenByDescending(x => x.ID)
+                                : stockQuery.OrderBy(s => s.MarketCap).ThenBy(x => x.ID);
                         break;
                 }
             }
@@ -101,14 +109,7 @@ namespace Web.API.Services
         {
             var stockQuery = _stockRepository.GetAllQuery();
 
-            var stock = await stockQuery.FirstOrDefaultAsync(s => s.ID == id, ct);
-
-            if (stock == null)
-            {
-                throw new NotFoundException($"Can't find stock with ID: {id}");
-            }
-
-            return await stockQuery
+            var stockDto = await stockQuery
                 .Select(s => new StockDto
                 {
                     ID = s.ID,
@@ -123,7 +124,7 @@ namespace Web.API.Services
                         .Take(20)
                         .Select(c => new CommentDto
                         {
-                            ID = s.ID,
+                            ID = c.ID,
                             Title = c.Title,
                             Content = c.Content,
                             CreatedBy = c.AppUser.UserName,
@@ -131,6 +132,13 @@ namespace Web.API.Services
                         })
                         .ToList()
                 }).FirstOrDefaultAsync(s => s.ID == id, ct);
+
+            if (stockDto == null)
+            {
+                throw new NotFoundException($"Can't find stock with ID: {id}");
+            }
+
+            return stockDto;
         }
 
         public async Task<StockDto> Update(int id, UpdateStockRequestDto updateStock, CancellationToken ct)
@@ -141,7 +149,7 @@ namespace Web.API.Services
             if (existingWithSameSymbol)
             {
                 _logger.LogWarning("Update stock failed: Symbol {Symbol} is already taken by another stock.", symbolUpper);
-                throw new IdentityException("Stock with this symbol already exists");
+                throw new ArgumentException("Stock with this symbol already exists");
             }
 
             var stockModel = await _stockRepository.UpdateAsync(id, updateStock, ct);
@@ -163,7 +171,7 @@ namespace Web.API.Services
             if (symbolExists)
             {
                 _logger.LogWarning("Create stock failed: Symbol {Symbol} already exists", stockDto.Symbol);
-                throw new ArgumentException($"Stock with ssymbol {stockDto.Symbol} already exists");
+                throw new ArgumentException($"Stock with symbol {stockDto.Symbol} already exists");
             }
 
             var stockModel = stockDto.ToStockFromCreateDTO();
