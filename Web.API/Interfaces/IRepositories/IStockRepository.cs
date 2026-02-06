@@ -12,8 +12,8 @@ namespace Web.API.Interfaces
         Task<Stock?> DeleteAsync(Stock stock, CancellationToken ct = default);
         Task<bool> StockExists(int id, CancellationToken ct = default);
         Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct = default);
-        Task<Stock?> GetByIdAsync(int id, CancellationToken ct);
-        Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct);
+        Task<Stock?> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct = default);
 
     }
 }
