@@ -41,6 +41,7 @@ namespace Web.API.Services
                 {
                     _logger.LogInformation("User: {User} with ID: {UserID} was successfully created",
                         AppUserModel.UserName, AppUserModel.Id);
+
                     return new NewUserDto
                     {
                         UserName = AppUserModel.UserName,
