@@ -24,7 +24,7 @@ namespace Web.API.Services
         public async Task<Portfolio> AddToPortfolio(string symbol, string userID, CancellationToken ct)
         {
             var symbolUpper = symbol.ToUpper();
-            var stockID = await _stockRepo.GetIdBySymbolAsync(symbolUpper);
+            var stockID = await _stockRepo.GetIdBySymbolAsync(symbolUpper, ct);
 
             if (stockID == 0)
             {
