@@ -9,7 +9,7 @@ using Web.API.Models;
 
 namespace Web.API.Controllers
 {
-    [Route("api/ portfolio")]
+    [Route("api/portfolio")]
     [ApiController]
     public class PortfolioController : ControllerBase
     {
