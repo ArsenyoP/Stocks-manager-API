@@ -32,4 +32,4 @@ namespace Web.API.Validators.Stock
     }
 
 }
-}
+

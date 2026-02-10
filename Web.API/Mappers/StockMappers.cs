@@ -49,19 +49,5 @@ namespace Web.API.Mappers
                 Industy = stockDto.Industy
             };
         }
-
-        public static Stock ToStockFromCreateDtoLight(this CreateLightStockRequestDto stockDto)
-        {
-            return new Stock
-            {
-                CompanyName = stockDto.CompanyName,
-                Symbol = stockDto.Symbol,
-                Purchase = 0,
-                LastDiv = 0,
-                MarketCap = 0,
-                Industy = ""
-            };
-        }
-
     }
 }
