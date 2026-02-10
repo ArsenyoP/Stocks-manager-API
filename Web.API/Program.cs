@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +27,9 @@ namespace Web.API
             // Services Configuration
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
+            builder.Services.AddFluentValidationAutoValidation();
 
             //setting up logging
             builder.Host.UseSerilog((context, configuration) =>
