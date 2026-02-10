@@ -73,12 +73,19 @@ namespace Web.API.Services
 
             commentModel.AppUserId = AppUserId;
 
-            await _commentsRepo.CreateCommentAsync(commentModel, ct);
+            var createdCommentModel = await _commentsRepo.CreateCommentAsync(commentModel, ct);
+
+            if (createdCommentModel == null)
+            {
+                throw new KeyNotFoundException("Error while creating comment");
+                _logger.LogError("Error while creating comment: {commentDto}",
+                    commentDto);
+            }
 
             _logger.LogInformation("User with ID {UserIDd} created comment for stock with ID {StockId}",
                 AppUserId, stockId);
 
-            return commentModel.ToCommentDto();
+            return createdCommentModel.ToCommentDto();
         }
 
         public async Task<CommentDto> UpdateComment(int id, UpdateCommentDto updateDto, CancellationToken ct)
@@ -115,5 +122,7 @@ namespace Web.API.Services
                     id);
             await _commentsRepo.DeleteAsync(commentModel, ct);
         }
+
+
     }
 }
