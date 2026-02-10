@@ -37,4 +37,8 @@
 		<InternalsVisibleTo Include="Web.API.Tests" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Validators\Account\" />
+	</ItemGroup>
+
 </Project>
