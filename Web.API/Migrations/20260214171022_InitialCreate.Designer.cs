@@ -12,8 +12,8 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260130185449_AddedIndexesForComments")]
-    partial class AddedIndexesForComments
+    [Migration("20260214171022_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "2c86f87c-707d-42b2-88a4-d698326ee170",
+                            Id = "750c1fc8-5d12-4463-8044-d6555f0407f6",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "ddd1150d-bb7c-4634-8f8d-8e856b83e94d",
+                            Id = "47178847-8fae-4af5-a236-9e15c99aebdc",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });

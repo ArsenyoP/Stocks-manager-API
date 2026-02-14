@@ -12,8 +12,8 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260130185307_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260214171957_AddNewStockFields")]
+    partial class AddNewStockFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "23954dd0-4754-4507-98a5-785a997d6f60",
+                            Id = "eb4b3260-05fb-470c-af9f-b9e9b9bcd85e",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "7d7b2eb3-5bcd-4051-b4a5-39f95819dd8e",
+                            Id = "3474648c-112d-460c-bc8a-61be046b3078",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -268,7 +268,10 @@ namespace Web.API.Migrations
                     b.HasIndex("AppUserId");
 
                     b.HasIndex("CreatedOn")
-                        .HasDatabaseName("IX_Comments_CreatedOn");
+                        .IsDescending()
+                        .HasDatabaseName("IX_Comments_CreatedOn_Covering");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("CreatedOn"), new[] { "Title", "Content", "AppUserId" });
 
                     b.HasIndex("StockID", "CreatedOn")
                         .IsDescending(false, true)
@@ -309,6 +312,9 @@ namespace Web.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Industy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -316,15 +322,24 @@ namespace Web.API.Migrations
                     b.Property<decimal>("LastDiv")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("LastUpdate")
+                        .HasColumnType("datetime2");
+
                     b.Property<long>("MarketCap")
                         .HasColumnType("bigint");
 
                     b.Property<decimal>("Purchase")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<long>("SharesOutstanding")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UpdateCount")
+                        .HasColumnType("int");
 
                     b.HasKey("ID");
 
