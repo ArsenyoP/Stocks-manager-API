@@ -234,8 +234,8 @@ namespace Web.API.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "23954dd0-4754-4507-98a5-785a997d6f60", null, "User", "USER" },
-                    { "7d7b2eb3-5bcd-4051-b4a5-39f95819dd8e", null, "Admin", "ADMIN" }
+                    { "47178847-8fae-4af5-a236-9e15c99aebdc", null, "Admin", "ADMIN" },
+                    { "750c1fc8-5d12-4463-8044-d6555f0407f6", null, "User", "USER" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -283,9 +283,11 @@ namespace Web.API.Migrations
                 column: "AppUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_CreatedOn",
+                name: "IX_Comments_CreatedOn_Covering",
                 table: "Comments",
-                column: "CreatedOn");
+                column: "CreatedOn",
+                descending: new bool[0])
+                .Annotation("SqlServer:Include", new[] { "Title", "Content", "AppUserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comments_StockID_CreatedOn_Covering",

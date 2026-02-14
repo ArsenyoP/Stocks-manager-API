@@ -35,7 +35,7 @@ namespace Web.API
             builder.Host.UseSerilog((context, configuration) =>
                 configuration.ReadFrom.Configuration(context.Configuration));
 
-
+            builder.Services.AddHttpClient<IFinancialService, FinancialService>();
 
             builder.Services.AddSwaggerGen(option =>
             {

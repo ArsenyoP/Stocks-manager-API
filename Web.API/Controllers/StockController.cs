@@ -10,6 +10,7 @@ using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
 using Web.API.Models;
+using Web.API.Services;
 
 namespace Web.API.Controllers
 {
@@ -19,9 +20,12 @@ namespace Web.API.Controllers
     public class StockController : ControllerBase
     {
         private readonly IStockService _stockService;
-        public StockController(IStockService stockService)
+        private readonly IFinancialService _financialService;
+
+        public StockController(IStockService stockService, IFinancialService financialService)
         {
             _stockService = stockService;
+            _financialService = financialService;
         }
 
         [HttpGet]
@@ -65,6 +69,18 @@ namespace Web.API.Controllers
             await _stockService.Delete(id, ct);
 
             return NoContent();
+        }
+
+
+
+
+
+
+        [HttpGet("test/{symbol}")]
+        public async Task<IActionResult> TestFMP([FromRoute] string symbol, CancellationToken ct)
+        {
+            var result = await _financialService.GetFullStock(symbol);
+            return Ok(result);
         }
     }
 }
