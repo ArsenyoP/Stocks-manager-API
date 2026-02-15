@@ -122,6 +122,7 @@ namespace Web.API
             builder.Services.AddScoped<IPorfolioService, PortfolioService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<IFinancialService, FinancialService>();
 
 
             var app = builder.Build();

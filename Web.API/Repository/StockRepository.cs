@@ -6,6 +6,8 @@ using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Models;
 using Web.API.Dtos.Comment;
+using Web.API.Dtos.FMP;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Web.API.Repository
 {
@@ -80,6 +82,29 @@ namespace Web.API.Repository
         public async Task<Stock?> GetByIdAsync(int id, CancellationToken ct)
         {
             return await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
+        }
+
+        public async Task<Stock?> RefreshPriceData(Stock stock, FMPRefreshDto refreshDto, CancellationToken ct)
+        {
+            if (stock == null)
+            {
+                return null;
+            }
+
+            stock.Purchase = refreshDto.Price;
+            stock.LastDiv = refreshDto.Dividend;
+            stock.MarketCap = (long)Math.Round(refreshDto.MarketCap, 0, MidpointRounding.AwayFromZero);
+
+            stock.LastUpdate = DateTime.Now;
+            stock.UpdateCount++;
+
+            await _contex.SaveChangesAsync(ct);
+            return stock;
+        }
+
+        public async Task<Stock?> GetBySymbol(string symbol, CancellationToken ct = default)
+        {
+            return await _contex.Stocks.FirstOrDefaultAsync(x => x.Symbol == symbol, ct);
         }
     }
 }

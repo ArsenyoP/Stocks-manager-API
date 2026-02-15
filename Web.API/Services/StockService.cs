@@ -8,6 +8,8 @@ using Web.API.Interfaces.IServices;
 using Web.API.Exceptions;
 using System.Diagnostics.SymbolStore;
 using Web.API.Mappers;
+using Web.API.Models;
+using Web.API.Dtos.FMP;
 
 namespace Web.API.Services
 {
@@ -15,11 +17,14 @@ namespace Web.API.Services
     {
         private readonly IStockRepository _stockRepository;
         private readonly ILogger<StockService> _logger;
+        private readonly IFinancialService _financialService;
 
-        public StockService(IStockRepository stockRepository, ILogger<StockService> logger)
+        public StockService(IStockRepository stockRepository, ILogger<StockService> logger,
+            IFinancialService financialService)
         {
             _stockRepository = stockRepository;
             _logger = logger;
+            _financialService = financialService;
         }
 
         public async Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct = default)
@@ -195,5 +200,73 @@ namespace Web.API.Services
             _logger.LogInformation("Stock {Symbol} (ID: {StockId}) was successfully deleted", stockModel.Symbol, id);
         }
 
+        //methods for API tasks 
+        public async Task<StockDto?> CreateFromApi(string symbol, CancellationToken ct)
+        {
+            var symbolUpper = symbol.ToUpper();
+            var stock = await _financialService.GetFullStock(symbolUpper, ct);
+
+            if (stock == null)
+            {
+                _logger.LogWarning("Can't create stock with symbol {symbolUpper}",
+                    symbolUpper);
+                return null;
+            }
+
+            await _stockRepository.CreateAsync(stock, ct);
+
+            return stock.ToStockDto();
+        }
+
+        public bool CheackIsFresh(Stock stock)
+        {
+            return stock.LastUpdate.AddMinutes(15) < DateTime.Now;
+        }
+
+        public async Task<StockDto?> RefreshStock(Stock stock, CancellationToken ct)
+        {
+            var stockSymbol = stock.Symbol;
+
+            var refreshDto = await _financialService.GetRefreshedStockDto(stockSymbol, ct);
+
+            if (refreshDto == null)
+            {
+                _logger.LogWarning("Can't refresh data for stock with symbol {symbol}",
+                    stockSymbol);
+
+                return stock.ToStockDto();
+            }
+
+            await _stockRepository.RefreshPriceData(stock, refreshDto, ct);
+            return stock.ToStockDto();
+        }
+
+        public async Task<StockDto?> GetBySymbol(string symbol, CancellationToken ct)
+        {
+            var symbolUpper = symbol.ToUpper();
+            var stock = await _stockRepository.GetBySymbol(symbolUpper, ct);
+
+            if (stock == null)
+            {
+                var stockDto = await CreateFromApi(symbolUpper, ct);
+
+                if (stockDto == null)
+                {
+                    throw new NotFoundException("Can't find stock or you dont have access to it");
+                }
+
+                _logger.LogInformation("Added stock with symbol: {symbol}", symbolUpper);
+                return stockDto;
+            }
+
+            if (CheackIsFresh(stock))
+            {
+                var stockDto = await RefreshStock(stock, ct);
+                _logger.LogInformation("Stock with symbol: {symbol} was updated", symbolUpper);
+                return stockDto;
+            }
+
+            return stock.ToStockDto();
+        }
     }
 }
