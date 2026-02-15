@@ -71,16 +71,17 @@ namespace Web.API.Controllers
             return NoContent();
         }
 
-
-
-
-
-
-        [HttpGet("test/{symbol}")]
-        public async Task<IActionResult> TestFMP([FromRoute] string symbol, CancellationToken ct)
+        [HttpGet("api/{symbol}")]
+        public async Task<IActionResult> GetBySymbolFromApi([FromRoute] string symbol, CancellationToken ct)
         {
-            var result = await _financialService.GetFullStock(symbol);
+            var result = await _stockService.GetBySymbol(symbol, ct);
+
             return Ok(result);
         }
+
+
+
+
+
     }
 }

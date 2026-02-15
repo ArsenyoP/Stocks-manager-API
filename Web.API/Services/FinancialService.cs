@@ -14,11 +14,11 @@ namespace Web.API.Services
             _config = config;
         }
 
-        public async Task<Stock?> GetFullStock(string symbol)
+        public async Task<Stock?> GetFullStock(string symbol, CancellationToken ct)
         {
             var key = _config["FMP:ApiKey"];
 
-            var stock = await _httpClient.GetFromJsonAsync<FMPProfileDto[]>($"https://financialmodelingprep.com/stable/profile?symbol={symbol}&apikey={key}");
+            var stock = await _httpClient.GetFromJsonAsync<FMPProfileDto[]>($"https://financialmodelingprep.com/stable/profile?symbol={symbol}&apikey={key}", ct);
 
             var profile = stock?.FirstOrDefault();
 
@@ -40,22 +40,19 @@ namespace Web.API.Services
             };
         }
 
-        public async Task<FMPRenewDto[]> GetUpdatedStock(string symbol)
+        public async Task<FMPRefreshDto?> GetRefreshedStockDto(string symbol, CancellationToken ct)
         {
             var key = _config["FMP:ApiKey"];
 
-            var updatedPrice = await _httpClient.GetFromJsonAsync<FMPRenewDto[]>($"https://financialmodelingprep.com/stable/profile?symbol={symbol}&apikey={key}");
+            var updatedPrice = await _httpClient.GetFromJsonAsync<FMPRefreshDto[]>($"https://financialmodelingprep.com/stable/profile?symbol={symbol}&apikey={key}", ct);
 
-            return updatedPrice;
+            if (updatedPrice == null)
+            {
+                return null;
+            }
+
+            var result = updatedPrice.FirstOrDefault();
+            return result;
         }
-
-        //public async Task<FMPPriceDto[]> Test(string symbol)
-        //{
-        //    var key = "lAVIKI1ByTv3kh8bTFtR2tuHM3JHIAEY";
-
-        //    var updatedPrice = await _httpClient.GetFromJsonAsync<FMPRenewDto[]>($"https://financialmodelingprep.com/stable/income-statement?symbol={symbol}&apikey={key}");
-
-        //    return updatedPrice;
-        //}
     }
 }

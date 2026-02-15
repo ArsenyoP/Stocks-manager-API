@@ -1,4 +1,5 @@
-﻿using Web.API.Dtos.Stock;
+﻿using Web.API.Dtos.FMP;
+using Web.API.Dtos.Stock;
 using Web.API.Helpers;
 using Web.API.Models;
 
@@ -14,6 +15,7 @@ namespace Web.API.Interfaces
         Task<int> GetIdBySymbolAsync(string symbol, CancellationToken ct = default);
         Task<Stock?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct = default);
-
+        Task<Stock?> RefreshPriceData(Stock stock, FMPRefreshDto refreshDto, CancellationToken ct = default);
+        Task<Stock?> GetBySymbol(string symbol, CancellationToken ct = default);
     }
 }

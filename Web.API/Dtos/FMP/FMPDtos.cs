@@ -23,13 +23,16 @@ namespace Web.API.Dtos.FMP
         public decimal Dividend { get; set; }
     }
 
-    public class FMPRenewDto
+    public class FMPRefreshDto
     {
         [JsonPropertyName("price")]
         public decimal Price { get; set; }
 
         [JsonPropertyName("lastDividend")]
         public decimal Dividend { get; set; }
+
+        [JsonPropertyName("marketCap")]
+        public decimal MarketCap { get; set; }
     }
 }
 

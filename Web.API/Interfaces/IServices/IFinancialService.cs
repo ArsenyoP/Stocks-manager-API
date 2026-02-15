@@ -5,7 +5,7 @@ namespace Web.API.Interfaces.IServices
 {
     public interface IFinancialService
     {
-        public Task<Stock?> GetFullStock(string symbol);
-        public Task<FMPRenewDto[]> GetUpdatedStock(string symbol);
+        public Task<Stock?> GetFullStock(string symbol, CancellationToken ct);
+        public Task<FMPRefreshDto?> GetRefreshedStockDto(string symbol, CancellationToken ct);
     }
 }
