@@ -5,7 +5,6 @@ using Web.API.Exceptions;
 using Web.API.Helpers;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
-using Web.API.Exceptions;
 using System.Diagnostics.SymbolStore;
 using Web.API.Mappers;
 using Web.API.Models;
@@ -169,7 +168,6 @@ namespace Web.API.Services
             return stockModel.ToStockDto();
         }
 
-        //check if stock exists
         public async Task<StockDto> Create(CreateStockRequestDto stockDto, CancellationToken ct)
         {
             bool symbolExists = await _stockRepository.SymbolExists(stockDto.Symbol, 0, ct);
@@ -266,6 +264,24 @@ namespace Web.API.Services
                 return stockDto;
             }
 
+            return stock.ToStockDto();
+        }
+
+        public async Task<StockDto> GetOrUpdateStockAsync(string symbol, CancellationToken ct)
+        {
+            var symbolUpper = symbol.ToUpper();
+            var stock = await _stockRepository.GetBySymbol(symbolUpper, ct);
+
+            if (stock == null)
+            {
+                var stockDto = await CreateFromApi(symbolUpper, ct);
+                if (stockDto == null)
+                {
+                    throw new NotFoundException("Can't find stock or you dont have access to it");
+                }
+                _logger.LogInformation("Added stock with symbol: {symbol}", symbolUpper);
+                return stockDto;
+            }
             return stock.ToStockDto();
         }
     }

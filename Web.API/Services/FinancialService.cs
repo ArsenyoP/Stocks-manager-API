@@ -36,7 +36,8 @@ namespace Web.API.Services
                 Purchase = profile.Price,
                 LastDiv = profile.Dividend,
                 CreatedAt = DateTime.Now,
-                LastUpdate = DateTime.Now
+                LastUpdate = DateTime.Now,
+                Comments = new List<Comment>()
             };
         }
 
