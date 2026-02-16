@@ -37,13 +37,13 @@ namespace Web.API.Controllers
             return Ok(commentDto);
         }
 
-        [HttpPost("{stockId:int}")]
+        [HttpPost("{symbol}")]
         [Authorize]
-        public async Task<IActionResult> CreateComment([FromRoute] int stockId, CreateCommentDto commentDto, CancellationToken ct)
+        public async Task<IActionResult> CreateComment([FromRoute] string symbol, CreateCommentDto commentDto, CancellationToken ct)
         {
             var AppUserId = User.GetUserID();
 
-            var createdComment = await _commentService.CreateComment(stockId, AppUserId, commentDto, ct);
+            var createdComment = await _commentService.CreateComment(symbol, AppUserId, commentDto, ct);
             return CreatedAtAction(nameof(GetById), new { id = createdComment.ID }, createdComment);
         }
 

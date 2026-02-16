@@ -68,9 +68,10 @@ namespace Web.API.Repository
                 .Select(s => s.ID)
                 .FirstOrDefaultAsync(ct);
         }
-        public Task<bool> StockExists(int id, CancellationToken ct)
+        public Task<bool> StockExists(string symbol, CancellationToken ct)
         {
-            return _contex.Stocks.AnyAsync(s => s.ID == id, ct);
+            var symbolUpper = symbol.ToUpper();
+            return _contex.Stocks.AnyAsync(s => s.Symbol == symbolUpper, ct);
         }
 
         public async Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct)
@@ -81,7 +82,10 @@ namespace Web.API.Repository
 
         public async Task<Stock?> GetByIdAsync(int id, CancellationToken ct)
         {
-            return await _contex.Stocks.FirstOrDefaultAsync(s => s.ID == id, ct);
+            return await _contex.Stocks
+                .Include(x => x.Comments)
+                .ThenInclude(c => c.AppUser)
+                .FirstOrDefaultAsync(s => s.ID == id, ct);
         }
 
         public async Task<Stock?> RefreshPriceData(Stock stock, FMPRefreshDto refreshDto, CancellationToken ct)
@@ -104,7 +108,10 @@ namespace Web.API.Repository
 
         public async Task<Stock?> GetBySymbol(string symbol, CancellationToken ct = default)
         {
-            return await _contex.Stocks.FirstOrDefaultAsync(x => x.Symbol == symbol, ct);
+            return await _contex.Stocks
+                .Include(x => x.Comments)
+                .ThenInclude(c => c.AppUser)
+                .FirstOrDefaultAsync(x => x.Symbol == symbol, ct);
         }
     }
 }

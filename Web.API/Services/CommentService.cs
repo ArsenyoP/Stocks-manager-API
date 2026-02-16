@@ -11,13 +11,15 @@ namespace Web.API.Services
         private readonly ICommentsRepository _commentsRepo;
         private readonly IStockRepository _stockRepo;
         private readonly ILogger<CommentService> _logger;
+        private readonly IStockService _stockService;
 
         public CommentService(ICommentsRepository commentsRepo, IStockRepository stockRepo,
-            ILogger<CommentService> logger)
+            ILogger<CommentService> logger, IStockService stockService)
         {
             _commentsRepo = commentsRepo;
             _stockRepo = stockRepo;
             _logger = logger;
+            _stockService = stockService;
         }
 
         public async Task<List<CommentDto>> GetAll(int page, CancellationToken ct)
@@ -59,15 +61,18 @@ namespace Web.API.Services
         }
 
 
-        public async Task<CommentDto> CreateComment(int stockId, string AppUserId, CreateCommentDto commentDto, CancellationToken ct)
+        public async Task<CommentDto> CreateComment(string symbol, string AppUserId, CreateCommentDto commentDto, CancellationToken ct)
         {
-            if (!await _stockRepo.StockExists(stockId, ct))
+
+            var symbolUpper = symbol.ToUpper();
+            if (!await _stockRepo.StockExists(symbolUpper, ct))
             {
-                _logger.LogWarning("User with ID {UserID} tried to create comment for non-existent" +
-                    "stock with ID {StockId}", AppUserId, stockId);
-                throw new KeyNotFoundException("Stock doesn't exists");
+                await _stockService.GetOrUpdateStockAsync(symbolUpper, ct);
+                _logger.LogInformation("Created comment for stock with symbol {symbolUpper}",
+                    symbolUpper);
             }
 
+            var stockId = await _stockRepo.GetIdBySymbolAsync(symbolUpper, ct);
 
             var commentModel = commentDto.ToCommentFromCreate(stockId);
 
@@ -77,9 +82,9 @@ namespace Web.API.Services
 
             if (createdCommentModel == null)
             {
-                throw new KeyNotFoundException("Error while creating comment");
                 _logger.LogError("Error while creating comment: {commentDto}",
-                    commentDto);
+                   commentDto);
+                throw new KeyNotFoundException("Error while creating comment");
             }
 
             _logger.LogInformation("User with ID {UserIDd} created comment for stock with ID {StockId}",

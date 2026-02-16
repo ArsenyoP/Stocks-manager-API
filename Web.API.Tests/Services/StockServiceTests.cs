@@ -13,6 +13,7 @@ using Web.API.Mappers;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using System.Net.WebSockets;
 using Web.API.Exceptions;
+using Web.API.Interfaces.IServices;
 
 namespace Web.API.Tests.Services;
 
@@ -21,12 +22,15 @@ public class StockServiceTests
     private readonly Mock<IStockRepository> _mockRepo;
     private readonly Mock<ILogger<StockService>> _loggerMock;
     private readonly StockService _service;
+    private readonly Mock<IFinancialService> _financialServiceMock;
 
     public StockServiceTests()
     {
         _mockRepo = new Mock<IStockRepository>();
         _loggerMock = new Mock<ILogger<StockService>>();
-        _service = new StockService(_mockRepo.Object, _loggerMock.Object);
+        _financialServiceMock = new Mock<IFinancialService>();
+        _service = new StockService(_mockRepo.Object, _loggerMock.Object, _financialServiceMock.Object);
+       
     }
 
     private List<Stock> GetTestStocks()
