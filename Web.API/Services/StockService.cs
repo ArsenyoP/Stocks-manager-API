@@ -145,10 +145,20 @@ namespace Web.API.Services
             return stockDto;
         }
 
-        public async Task<StockDto> Update(int id, UpdateStockRequestDto updateStock, CancellationToken ct)
+        public async Task<StockDto> Update(string symbol, UpdateStockRequestDto updateStock, CancellationToken ct)
         {
             var symbolUpper = updateStock.Symbol.ToUpper().Trim();
-            var existingWithSameSymbol = await _stockRepository.SymbolExists(symbolUpper, id, ct);
+            var oldSymbolUpper = symbol.ToUpper().Trim();
+
+            var stockModel = await _stockRepository.GetBySymbol(oldSymbolUpper, ct);
+
+            if (stockModel == null)
+            {
+                _logger.LogWarning("Update stock failed: Stock with symbol {Symbol} not found", oldSymbolUpper);
+                throw new KeyNotFoundException($"Stock with symbol {oldSymbolUpper} not found");
+            }
+
+            var existingWithSameSymbol = await _stockRepository.SymbolExists(symbolUpper, stockModel.ID, ct);
 
             if (existingWithSameSymbol)
             {
@@ -156,15 +166,17 @@ namespace Web.API.Services
                 throw new ArgumentException("Stock with this symbol already exists");
             }
 
-            var stockModel = await _stockRepository.UpdateAsync(id, updateStock, ct);
+
+
+            stockModel = await _stockRepository.UpdateAsync(stockModel, updateStock, ct);
 
             if (stockModel == null)
             {
-                _logger.LogWarning("Update stock failed: Stock with ID {StockId} not found", id);
-                throw new KeyNotFoundException($"Stock with ID {id} not found");
+                _logger.LogWarning("Update stock failed: Stock with symbol {Symbol} not found", symbolUpper);
+                throw new KeyNotFoundException($"Stock with symbol {symbolUpper} not found");
             }
 
-            _logger.LogInformation("Stock with ID {StockId} was successfully updated to symbol {Symbol}", id, symbolUpper);
+            _logger.LogInformation("Stock with symbol {Symbol} and ID {StockID} was successfully updated", symbolUpper, stockModel.ID);
             return stockModel.ToStockDto();
         }
 
@@ -184,18 +196,19 @@ namespace Web.API.Services
             return stockModel.ToStockDto();
         }
 
-        public async Task Delete(int id, CancellationToken ct)
+        public async Task Delete(string symbol, CancellationToken ct)
         {
-            var stockModel = await _stockRepository.GetByIdAsync(id, ct);
+            var symbolUpper = symbol.ToUpper().Trim();
+            var stockModel = await _stockRepository.GetBySymbol(symbolUpper, ct);
 
             if (stockModel == null)
             {
-                _logger.LogWarning("Delete stock failed: Stock with ID {StockId} not found", id);
-                throw new KeyNotFoundException($"Can't find stock with ID: {id}");
+                _logger.LogWarning("Delete stock failed: Stock with symbol {Symbol} not found", symbolUpper);
+                throw new KeyNotFoundException($"Stock with symbol {symbolUpper} not found");
             }
             await _stockRepository.DeleteAsync(stockModel, ct);
 
-            _logger.LogInformation("Stock {Symbol} (ID: {StockId}) was successfully deleted", stockModel.Symbol, id);
+            _logger.LogInformation("Stock with symbol {Symbol} and ID {StockID} was successfully deleted", symbolUpper, stockModel.ID);
         }
 
         //methods for API tasks 
@@ -286,3 +299,4 @@ namespace Web.API.Services
         }
     }
 }
+
