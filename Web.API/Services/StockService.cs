@@ -224,14 +224,21 @@ namespace Web.API.Services
                 return null;
             }
 
-            await _stockRepository.CreateAsync(stock, ct);
+            stock = await _stockRepository.CreateAsync(stock, ct);
+
+            if (stock == null)
+            {
+                _logger.LogError("Error while creating stock with symbol {symbolUpper}",
+                    symbolUpper);
+                return null;
+            }
 
             return stock.ToStockDto();
         }
 
         public bool CheackIsFresh(Stock stock)
         {
-            return stock.LastUpdate.AddMinutes(15) < DateTime.Now;
+            return stock.LastUpdate.AddMinutes(15) > DateTime.Now;
         }
 
         public async Task<StockDto?> RefreshStock(Stock stock, CancellationToken ct)
@@ -248,9 +255,17 @@ namespace Web.API.Services
                 return stock.ToStockDto();
             }
 
-            await _stockRepository.RefreshPriceData(stock, refreshDto, ct);
-            return stock.ToStockDto();
+            var updatedStock = await _stockRepository.RefreshPriceData(stock, refreshDto, ct);
+
+            if (updatedStock == null)
+            {
+                _logger.LogError("Error while updating stock with symbol: {stockSymbol}", stockSymbol);
+                throw new DbUpdateException($"Error while updating stock with symbol: {stockSymbol}");
+            }
+
+            return updatedStock.ToStockDto();
         }
+
 
         public async Task<StockDto?> GetBySymbol(string symbol, CancellationToken ct)
         {
@@ -270,7 +285,7 @@ namespace Web.API.Services
                 return stockDto;
             }
 
-            if (CheackIsFresh(stock))
+            if (!CheackIsFresh(stock))
             {
                 var stockDto = await RefreshStock(stock, ct);
                 _logger.LogInformation("Stock with symbol: {symbol} was updated", symbolUpper);
@@ -280,7 +295,7 @@ namespace Web.API.Services
             return stock.ToStockDto();
         }
 
-        public async Task<StockDto> GetOrUpdateStockAsync(string symbol, CancellationToken ct)
+        public async Task<StockDto> GetOrCreateStockAsync(string symbol, CancellationToken ct)
         {
             var symbolUpper = symbol.ToUpper();
             var stock = await _stockRepository.GetBySymbol(symbolUpper, ct);

@@ -21,6 +21,6 @@ namespace Web.API.Interfaces.IServices
 
         public bool CheackIsFresh(Stock stock);
         public Task<StockDto?> RefreshStock(Stock stock, CancellationToken ct);
-        public Task<StockDto> GetOrUpdateStockAsync(string symbol, CancellationToken ct);
+        public Task<StockDto> GetOrCreateStockAsync(string symbol, CancellationToken ct);
     }
 }
