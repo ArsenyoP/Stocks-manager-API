@@ -67,7 +67,11 @@ namespace Web.API.Services
             var symbolUpper = symbol.ToUpper();
             if (!await _stockRepo.StockExists(symbolUpper, ct))
             {
-                await _stockService.GetOrUpdateStockAsync(symbolUpper, ct);
+                var createdStock = await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
+                if (createdStock == null)
+                {
+                    throw new KeyNotFoundException($"Cant find stock with symbol: {symbol}");
+                }
                 _logger.LogInformation("Created comment for stock with symbol {symbolUpper}",
                     symbolUpper);
             }
@@ -75,7 +79,6 @@ namespace Web.API.Services
             var stockId = await _stockRepo.GetIdBySymbolAsync(symbolUpper, ct);
 
             var commentModel = commentDto.ToCommentFromCreate(stockId);
-
             commentModel.AppUserId = AppUserId;
 
             var createdCommentModel = await _commentsRepo.CreateCommentAsync(commentModel, ct);
