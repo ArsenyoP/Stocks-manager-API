@@ -10,6 +10,7 @@ using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
 using Web.API.Models;
+using Web.API.Services;
 
 namespace Web.API.Controllers
 {
@@ -19,9 +20,12 @@ namespace Web.API.Controllers
     public class StockController : ControllerBase
     {
         private readonly IStockService _stockService;
-        public StockController(IStockService stockService)
+        private readonly IFinancialService _financialService;
+
+        public StockController(IStockService stockService, IFinancialService financialService)
         {
             _stockService = stockService;
+            _financialService = financialService;
         }
 
         [HttpGet]
@@ -49,22 +53,35 @@ namespace Web.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = stockModel.ID }, stockModel);
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStock
+        [HttpPut("{symbol}")]
+        public async Task<IActionResult> Update([FromRoute] string symbol, [FromBody] UpdateStockRequestDto updateStock
             , CancellationToken ct)
         {
-            var stockModel = await _stockService.Update(id, updateStock, ct);
+            var stockModel = await _stockService.Update(symbol, updateStock, ct);
 
             return Ok(stockModel);
         }
 
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
+        [HttpDelete("{symbol}")]
+        public async Task<IActionResult> Delete([FromRoute] string symbol, CancellationToken ct)
         {
-            await _stockService.Delete(id, ct);
+            await _stockService.Delete(symbol, ct);
 
             return NoContent();
         }
+
+        [HttpGet("api/{symbol}")]
+        public async Task<IActionResult> GetBySymbolFromApi([FromRoute] string symbol, CancellationToken ct)
+        {
+            var result = await _stockService.GetBySymbol(symbol, ct);
+
+            return Ok(result);
+        }
+
+
+
+
+
     }
 }

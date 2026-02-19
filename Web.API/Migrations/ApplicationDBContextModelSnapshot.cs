@@ -51,13 +51,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "2c86f87c-707d-42b2-88a4-d698326ee170",
+                            Id = "eb4b3260-05fb-470c-af9f-b9e9b9bcd85e",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "ddd1150d-bb7c-4634-8f8d-8e856b83e94d",
+                            Id = "3474648c-112d-460c-bc8a-61be046b3078",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -309,6 +309,9 @@ namespace Web.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Industy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -316,15 +319,24 @@ namespace Web.API.Migrations
                     b.Property<decimal>("LastDiv")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("LastUpdate")
+                        .HasColumnType("datetime2");
+
                     b.Property<long>("MarketCap")
                         .HasColumnType("bigint");
 
                     b.Property<decimal>("Purchase")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<long>("SharesOutstanding")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UpdateCount")
+                        .HasColumnType("int");
 
                     b.HasKey("ID");
 

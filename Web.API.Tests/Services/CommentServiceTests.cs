@@ -8,7 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Web.API.Dtos.Comment;
+using Web.API.Dtos.Stock;
 using Web.API.Interfaces;
+using Web.API.Interfaces.IServices;
 using Web.API.Models;
 using Web.API.Services;
 
@@ -19,6 +21,7 @@ namespace Web.API.Tests.Services
         private readonly Mock<ICommentsRepository> _commentsRepoMock;
         private readonly Mock<IStockRepository> _stockRepoMock;
         private readonly Mock<ILogger<CommentService>> _loggerMock;
+        private readonly Mock<IStockService> _stockServiceMock;
         private readonly CommentService _commentService;
 
         public CommentServiceTests()
@@ -26,7 +29,8 @@ namespace Web.API.Tests.Services
             _commentsRepoMock = new Mock<ICommentsRepository>();
             _stockRepoMock = new Mock<IStockRepository>();
             _loggerMock = new Mock<ILogger<CommentService>>();
-            _commentService = new CommentService(_commentsRepoMock.Object, _stockRepoMock.Object, _loggerMock.Object);
+            _stockServiceMock = new Mock<IStockService>();
+            _commentService = new CommentService(_commentsRepoMock.Object, _stockRepoMock.Object, _loggerMock.Object, _stockServiceMock.Object);
         }
 
         private List<Comment> GetTestComments()
@@ -131,7 +135,7 @@ namespace Web.API.Tests.Services
         }
 
         [Fact]
-        public async Task CreateComment_ValidData_ReturnsCommentDto()
+        public async Task CreateComment_StockExistsInDb_ReturnsCommentDto()
         {
             var createDto = new CreateCommentDto
             {
@@ -148,17 +152,17 @@ namespace Web.API.Tests.Services
                 AppUserId = "User_1_id",
                 AppUser = new AppUser { UserName = "User 1" }
             };
-            var stockId = 1;
+            var symbol = "AAPL";
             var AppUserId = "user_id_1";
 
-            _stockRepoMock.Setup(x => x.StockExists(stockId, It.IsAny<CancellationToken>()))
+            _stockRepoMock.Setup(x => x.StockExistsInDb(symbol, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             _commentsRepoMock.Setup(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(commentModel);
 
 
-            var result = await _commentService.CreateComment(stockId, AppUserId, createDto, CancellationToken.None);
+            var result = await _commentService.CreateComment(symbol, AppUserId, createDto, CancellationToken.None);
 
 
             result.ID.Should().Be(1);
@@ -166,7 +170,7 @@ namespace Web.API.Tests.Services
             result.Content.Should().Be("Content for comment 1");
             result.CreatedBy.Should().Be("User 1");
 
-            _stockRepoMock.Verify(x => x.StockExists(stockId, It.IsAny<CancellationToken>()),
+            _stockRepoMock.Verify(x => x.StockExistsInDb(symbol, It.IsAny<CancellationToken>()),
                 Times.Once);
 
             _commentsRepoMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()),
@@ -174,53 +178,108 @@ namespace Web.API.Tests.Services
         }
 
         [Fact]
-        public async Task CreateComment_StockDoesntExist_ThrowsKeyNotFoundException()
+        public async Task CreateComment_StockExistsFromApi_ReturnsCommentDto()
         {
+            var stockDto = new StockDto { ID = 1 };
+            var commentModel = new Comment
+            {
+                ID = 1,
+                Title = "Title 1",
+                Content = "Content for comment 1",
+                CreatedOn = DateTime.UtcNow.AddDays(1),
+                StockID = 1,
+                AppUserId = "User_1_id",
+                AppUser = new AppUser { UserName = "User 1" }
+            };
+
+            var symbol = "APPL";
+            var userId = "user_id_1";
             var createDto = new CreateCommentDto
             {
                 Title = "Test title 1",
                 Content = "Test content 1"
             };
-            var stockId = 1;
-            var appUserId = "user_id_1";
 
-            _stockRepoMock.Setup(x => x.StockExists(stockId, It.IsAny<CancellationToken>()))
+            _stockRepoMock.Setup(x => x.StockExistsInDb(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
+            _stockServiceMock.Setup(x => x.GetOrCreateStockAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockDto);
 
-            Func<Task> act = async () => await _commentService.CreateComment(stockId, appUserId, createDto, CancellationToken.None);
+            _stockRepoMock.Setup(x => x.GetIdBySymbolAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+
+            _commentsRepoMock.Setup(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(commentModel);
+
+
+            var result = await _commentService.CreateComment(symbol, userId, createDto, CancellationToken.None);
+
+
+            result.ID.Should().Be(1);
+            result.Title.Should().Be("Title 1");
+            result.Content.Should().Be("Content for comment 1");
+            result.CreatedBy.Should().Be("User 1");
+        }
+
+        [Fact]
+        public async Task CreateComment_StockNotFoundInApi_ThrowsNotFoundException()
+        {
+            var symbol = "APPL";
+
+            _stockRepoMock.Setup(x => x.StockExistsInDb(symbol, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            _stockServiceMock.Setup(x => x.GetOrCreateStockAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new KeyNotFoundException("Can't find stock or you dont have access to it"));
+
+
+            Func<Task> act = async () => await _commentService.CreateComment(symbol, It.IsAny<string>(), It.IsAny<CreateCommentDto>(), CancellationToken.None);
 
 
             await act.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage("Stock doesn't exists");
+                .WithMessage("Can't find stock or you dont have access to it");
 
             _commentsRepoMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
         [Fact]
-        public async Task CreateComment_CreatedCommentNull_ThrowsKeyNotFoundException()
+        public async Task CreateComment_ErrorWhileCreating_ThrowsNotFoundException()
         {
             var createDto = new CreateCommentDto
             {
                 Title = "Test title 1",
                 Content = "Test content 1"
             };
-            var stockId = 1;
-            var appUserId = "user_id_1";
+            var commentModel = new Comment
+            {
+                ID = 1,
+                Title = "Title 1",
+                Content = "Content for comment 1",
+                CreatedOn = DateTime.UtcNow.AddDays(1),
+                StockID = 1,
+                AppUserId = "User_1_id",
+                AppUser = new AppUser { UserName = "User 1" }
+            };
+            var symbol = "AAPL";
+            var AppUserId = "user_id_1";
 
-            _stockRepoMock.Setup(x => x.StockExists(stockId, It.IsAny<CancellationToken>()))
+            _stockRepoMock.Setup(x => x.StockExistsInDb(symbol, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             _commentsRepoMock.Setup(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Comment?)null);
 
 
-            Func<Task> act = async () => await _commentService.CreateComment(stockId, appUserId, createDto, CancellationToken.None);
+            Func<Task> act = async () => await _commentService.CreateComment(symbol, AppUserId, createDto, CancellationToken.None);
 
 
             await act.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage("Error while creating comment");
+
+            _commentsRepoMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -262,7 +321,7 @@ namespace Web.API.Tests.Services
 
             _commentsRepoMock.Verify(x => x.GetById(commentId, It.IsAny<CancellationToken>()),
                 Times.Once);
-            _commentsRepoMock.Verify(x => x.UpdateCommentAsync(existingComment, updateDto, It.IsAny<CancellationToken>()), 
+            _commentsRepoMock.Verify(x => x.UpdateCommentAsync(existingComment, updateDto, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 

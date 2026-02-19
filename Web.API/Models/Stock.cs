@@ -16,8 +16,14 @@ namespace Web.API.Models
         public decimal LastDiv { get; set; }
         public string Industy { get; set; } = string.Empty;
         public long MarketCap { get; set; }
-        public List<Comment> Comments { get; set; } = new List<Comment>();
 
+        //FMP
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime LastUpdate { get; set; } = DateTime.Now;
+        public int UpdateCount { get; set; }
+        public long SharesOutstanding { get; set; }
+
+        public List<Comment> Comments { get; set; } = new List<Comment>();
         public List<Portfolio> Portfolios { get; set; } = new List<Portfolio>();
     }
 }
