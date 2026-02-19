@@ -13,6 +13,9 @@ using Web.API.Mappers;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using System.Net.WebSockets;
 using Web.API.Exceptions;
+using Web.API.Interfaces.IServices;
+using Web.API.Dtos.FMP;
+using Microsoft.EntityFrameworkCore;
 
 namespace Web.API.Tests.Services;
 
@@ -21,12 +24,15 @@ public class StockServiceTests
     private readonly Mock<IStockRepository> _mockRepo;
     private readonly Mock<ILogger<StockService>> _loggerMock;
     private readonly StockService _service;
+    private readonly Mock<IFinancialService> _financialServiceMock;
 
     public StockServiceTests()
     {
         _mockRepo = new Mock<IStockRepository>();
         _loggerMock = new Mock<ILogger<StockService>>();
-        _service = new StockService(_mockRepo.Object, _loggerMock.Object);
+        _financialServiceMock = new Mock<IFinancialService>();
+        _service = new StockService(_mockRepo.Object, _loggerMock.Object, _financialServiceMock.Object);
+
     }
 
     private List<Stock> GetTestStocks()
@@ -85,6 +91,7 @@ public class StockServiceTests
         result.Should().BeEmpty();
     }
 
+    // TODO: add more tests with different filters and sorting options
     [Theory]
     [InlineData(true, "dividends")]
     public async Task GetAllAsync_WhithFiltres_ReturnFiltredStocks(
@@ -242,25 +249,38 @@ public class StockServiceTests
             , Times.Never, "Should not call CreateAsync when symbol already exists");
     }
 
+
     [Fact]
     public async Task Update_WithValidData_ReturnsUpdatedStock()
     {
-        var stockId = 1;
+        var stockSymbol = "MCRSF";
+        var srockId = 1;
         var updateDto = new UpdateStockRequestDto
         {
             CompanyName = "Microsoft",
             Symbol = "MCRSF"
         };
-        var updatedStock = new Stock { ID = stockId, CompanyName = "Microsoft", Symbol = "MCRSF" };
 
-        _mockRepo.Setup(x => x.SymbolExists(updateDto.Symbol, stockId, It.IsAny<CancellationToken>()))
+        var stock = new Stock
+        {
+            ID = srockId,
+            CompanyName = "Microsoft",
+            Symbol = "MCRSF"
+        };
+
+        var updatedStock = new Stock { ID = srockId, CompanyName = "Microsoft", Symbol = "MCRSF" };
+
+        _mockRepo.Setup(x => x.SymbolExists(updateDto.Symbol, srockId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        _mockRepo.Setup(x => x.UpdateAsync(stockId, updateDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(updatedStock);
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo.Setup(x => x.UpdateAsync(stock, updateDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
 
 
-        var result = await _service.Update(stockId, updateDto, new CancellationToken { });
+        var result = await _service.Update(stockSymbol, updateDto, new CancellationToken { });
 
 
         result.Should().NotBeNull();
@@ -268,7 +288,7 @@ public class StockServiceTests
         result.CompanyName.Should().Be("Microsoft");
 
         _mockRepo.Verify(
-            x => x.UpdateAsync(stockId, updateDto, new CancellationToken { }),
+            x => x.UpdateAsync(stock, updateDto, new CancellationToken { }),
             Times.Once, "Shlould execute UpdateAsync onece");
     }
 
@@ -276,6 +296,7 @@ public class StockServiceTests
     public async Task Update_WithExistingSymbol_ThrowArgumentException()
     {
         var stockId = 1;
+        var stockSymbol = "APPL";
         var updateDto = new UpdateStockRequestDto
         {
             Symbol = "APPl"
@@ -284,14 +305,16 @@ public class StockServiceTests
         _mockRepo.Setup(x => x.SymbolExists("APPL", stockId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Stock { ID = stockId, Symbol = "APPL" });
 
-        Func<Task> act = async () => await _service.Update(stockId, updateDto, new CancellationToken { });
+        Func<Task> act = async () => await _service.Update(stockSymbol, updateDto, new CancellationToken { });
 
 
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("Stock with this symbol already exists");
 
-        _mockRepo.Verify(x => x.UpdateAsync(stockId, updateDto, new CancellationToken { }),
+        _mockRepo.Verify(x => x.UpdateAsync(It.IsAny<Stock>(), updateDto, new CancellationToken { }),
             Times.Never, "Should not call UpdateAsync if stock with this symbol already exists");
     }
 
@@ -299,36 +322,39 @@ public class StockServiceTests
     public async Task Update_WithNonExistingStock_ThrowKeyNotFoundException()
     {
         var stockId = 999;
+        var stockSymbol = "APPL";
         var updateDto = new UpdateStockRequestDto { Symbol = "APPL" };
 
         _mockRepo.Setup(x => x.SymbolExists(updateDto.Symbol, stockId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        _mockRepo.Setup(x => x.UpdateAsync(stockId, It.IsAny<UpdateStockRequestDto>(), It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Stock?)null);
 
 
-        Func<Task> act = async () => await _service.Update(stockId, updateDto, new CancellationToken { });
+
+
+        Func<Task> act = async () => await _service.Update(stockSymbol, updateDto, new CancellationToken { });
 
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("Stock with ID 999 not found");
+            .WithMessage("Stock with symbol APPL not found");
 
-        _mockRepo.Verify(x => x.UpdateAsync(stockId, It.IsAny<UpdateStockRequestDto>(), It.IsAny<CancellationToken>()),
-            Times.Once, "Should call UpdateAsync once");
+        _mockRepo.Verify(x => x.UpdateAsync(It.IsAny<Stock>(), It.IsAny<UpdateStockRequestDto>(), It.IsAny<CancellationToken>()),
+            Times.Never, "Should call UpdateAsync once");
     }
 
     [Fact]
     public async Task Delete_WithExistingStock_ExecuteDeleteMethod()
     {
-        var stockId = 1;
+        var stockSymbol = "APPL";
         var stock = new Stock { Symbol = "APPl" };
 
-        _mockRepo.Setup(x => x.GetByIdAsync(stockId, It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
             .ReturnsAsync(stock);
 
 
-        await _service.Delete(stockId, new CancellationToken { });
+        await _service.Delete(stockSymbol, new CancellationToken { });
 
 
         _mockRepo.Verify(x => x.DeleteAsync(stock, It.IsAny<CancellationToken>()),
@@ -338,20 +364,378 @@ public class StockServiceTests
     [Fact]
     public async Task Delete_WithNonExistingStock_ThrowKeyNotFoundException()
     {
-        var stockId = 1;
+        var stockSymbol = "APPL";
 
-        _mockRepo.Setup(x => x.GetByIdAsync(stockId, It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Stock?)null);
 
-        Func<Task> act = async () => await _service.Delete(stockId, new CancellationToken { });
+        Func<Task> act = async () => await _service.Delete(stockSymbol, new CancellationToken { });
 
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("Can't find stock with ID: 1");
+            .WithMessage("Stock with symbol APPL not found");
 
         _mockRepo.Verify(x => x.DeleteAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()),
             Times.Never, "Should not call DeleteAsync when Stock doesn not exists");
     }
 
+    //API methods tests 
+    [Fact]
+    public async Task CreateFromApi_StockFound_ReturnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL" };
 
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo
+            .Setup(repo => repo.CreateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var result = await _service.CreateFromApi(stockSymbol, CancellationToken.None);
+
+
+        result.Symbol.Should().Be("APPL");
+
+        _financialServiceMock.Verify(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateFromApi_StockNotFound_ReturnsNull()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL" };
+
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        var result = await _service.CreateFromApi(stockSymbol, CancellationToken.None);
+
+
+        result.Should().BeNull();
+
+        _financialServiceMock.Verify(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateFromApi_StockFoundErrorWhileCreating_ReturnsNull()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL" };
+
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo
+            .Setup(repo => repo.CreateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+
+        var result = await _service.CreateFromApi(stockSymbol, CancellationToken.None);
+
+
+        result.Should().BeNull();
+
+        _financialServiceMock.Verify(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshStock_RefreshDtoexists_ReturnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var refreshDto = new FMPRefreshDto { };
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1 };
+        var refreshedstock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 2 };
+
+
+        _financialServiceMock.Setup(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshDto);
+
+        _mockRepo.Setup(x => x.RefreshPriceData(stock, refreshDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshedstock);
+
+
+        var result = await _service.RefreshStock(stock, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.MarketCap.Should().Be(2);
+
+        _financialServiceMock.Verify(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.RefreshPriceData(stock, refreshDto, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshStock_RefreshDtoNull_ReturnsOldStockDto()
+    {
+        var stockSymbol = "APPL";
+        var refreshDto = new FMPRefreshDto { };
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1 };
+
+
+        _financialServiceMock.Setup(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FMPRefreshDto?)null);
+
+
+        var result = await _service.RefreshStock(stock, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.MarketCap.Should().Be(1);
+
+
+        _financialServiceMock.Verify(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.RefreshPriceData(stock, refreshDto, It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshStock_ErrorWhileUpdating_ThrowsDbUpdateException()
+    {
+        var stockSymbol = "APPL";
+        var refreshDto = new FMPRefreshDto { };
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1 };
+        var refreshedstock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 2 };
+
+
+        _financialServiceMock.Setup(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshDto);
+
+        _mockRepo.Setup(x => x.RefreshPriceData(stock, refreshDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+
+        Func<Task> act = async () => await _service.RefreshStock(stock, CancellationToken.None);
+
+
+        await act.Should().ThrowAsync<DbUpdateException>()
+            .WithMessage("Error while updating stock with symbol: APPL");
+
+
+        _financialServiceMock.Verify(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.RefreshPriceData(stock, refreshDto, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetBySymbol_FreshStockInDb_RerutnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var result = await _service.RefreshStock(stock, CancellationToken.None);
+
+
+        result.Should().NotBeNull();
+        result.Symbol.Should().Equals(stockSymbol);
+
+        _mockRepo.Verify(x => x.UpdateAsync(It.IsAny<Stock>(), It.IsAny<UpdateStockRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetBySymbol_NotFreshStockInDb_RerutnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now.AddDays(-1) };
+        var updatedStock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 10, LastUpdate = DateTime.Now };
+
+
+        var fmpDto = new FMPRefreshDto { Dividend = 2, MarketCap = 3, Price = 4 };
+
+
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _financialServiceMock.Setup(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fmpDto);
+
+        _mockRepo.Setup(x => x.RefreshPriceData(stock, fmpDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedStock);
+
+
+        var result = await _service.GetBySymbol(stockSymbol, CancellationToken.None);
+
+
+        result.Should().NotBeNull();
+        result.MarketCap.Should().Be(10);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetRefreshedStockDto(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.RefreshPriceData(stock, fmpDto, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetBySymbol_FromAPIExists_RerutnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo.Setup(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var result = await _service.GetBySymbol(stockSymbol, CancellationToken.None);
+
+
+        result.Should().NotBeNull();
+        result.Symbol.Should().Be(stockSymbol);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+    }
+
+    [Fact]
+    public async Task GetBySymbol_FromAPIТNotFound_RerutnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+
+        Func<Task> act = async () => await _service.GetBySymbol(stockSymbol, CancellationToken.None);
+
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Can't find stock or you dont have access to it");
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Never);
+
+    }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockInDb_ReturnsStockDto()
+    {
+        var symbol = "APPL";
+        Stock stock = new Stock { Symbol = symbol };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var resut = await _service.GetOrCreateStockAsync(symbol, CancellationToken.None);
+
+
+        resut.Should().NotBeNull();
+        resut.Symbol.Should().Be(symbol);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockFromApi_ReturnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo.Setup(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var resut = await _service.GetOrCreateStockAsync(stockSymbol, CancellationToken.None);
+
+
+        resut.Should().NotBeNull();
+        resut.Symbol.Should().Be(stockSymbol);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockNotFound_ThrowsNotFoundException()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+
+        Func<Task> act = async () => await _service.GetOrCreateStockAsync(stockSymbol, CancellationToken.None);
+
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Can't find stock or you dont have access to it");
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }
