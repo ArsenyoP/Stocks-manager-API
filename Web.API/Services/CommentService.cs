@@ -65,13 +65,9 @@ namespace Web.API.Services
         {
             var symbolUpper = symbol.ToUpper();
             //провірка в API
-            if (!await _stockRepo.StockExists(symbolUpper, ct))
+            if (!await _stockRepo.StockExistsInDb(symbolUpper, ct))
             {
-                var createdStock = await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
-                if (createdStock == null)
-                {
-                    throw new KeyNotFoundException($"Cant find stock with symbol: {symbol}");
-                }
+                await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
                 _logger.LogInformation("Created comment for stock with symbol {symbolUpper}",
                     symbolUpper);
             }

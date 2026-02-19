@@ -19,7 +19,7 @@ namespace Web.API.Interfaces
 
         Task<Stock?> RefreshPriceData(Stock stock, FMPRefreshDto refreshDto, CancellationToken ct = default);
 
-        Task<bool> StockExists(string symbol, CancellationToken ct = default);
+        Task<bool> StockExistsInDb(string symbol, CancellationToken ct = default);
         Task<bool> SymbolExists(string symbol, int currentId, CancellationToken ct = default);
     }
 }

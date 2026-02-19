@@ -106,7 +106,7 @@ namespace Web.API.Repository
         }
 
 
-        public Task<bool> StockExists(string symbol, CancellationToken ct)
+        public Task<bool> StockExistsInDb(string symbol, CancellationToken ct)
         {
             var symbolUpper = symbol.ToUpper();
             return _contex.Stocks.AnyAsync(s => s.Symbol == symbolUpper, ct);
