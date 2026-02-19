@@ -219,7 +219,7 @@ namespace Web.API.Services
 
             if (stock == null)
             {
-                _logger.LogWarning("Can't create stock with symbol {symbolUpper}",
+                _logger.LogInformation("Can't create stock with symbol {symbolUpper}",
                     symbolUpper);
                 return null;
             }

@@ -63,8 +63,8 @@ namespace Web.API.Services
 
         public async Task<CommentDto> CreateComment(string symbol, string AppUserId, CreateCommentDto commentDto, CancellationToken ct)
         {
-
             var symbolUpper = symbol.ToUpper();
+            //провірка в API
             if (!await _stockRepo.StockExists(symbolUpper, ct))
             {
                 var createdStock = await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
@@ -130,7 +130,5 @@ namespace Web.API.Services
                     id);
             await _commentsRepo.DeleteAsync(commentModel, ct);
         }
-
-
     }
 }
