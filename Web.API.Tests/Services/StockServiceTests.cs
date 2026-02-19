@@ -657,4 +657,85 @@ public class StockServiceTests
             Times.Never);
 
     }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockInDb_ReturnsStockDto()
+    {
+        var symbol = "APPL";
+        Stock stock = new Stock { Symbol = symbol };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var resut = await _service.GetOrCreateStockAsync(symbol, CancellationToken.None);
+
+
+        resut.Should().NotBeNull();
+        resut.Symbol.Should().Be(symbol);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockFromApi_ReturnsStockDto()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+        _mockRepo.Setup(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stock);
+
+
+        var resut = await _service.GetOrCreateStockAsync(stockSymbol, CancellationToken.None);
+
+
+        resut.Should().NotBeNull();
+        resut.Symbol.Should().Be(stockSymbol);
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOrCreateStockAsync_StockNotFound_ThrowsNotFoundException()
+    {
+        var stockSymbol = "APPL";
+        var stock = new Stock { ID = 1, Symbol = "APPL", MarketCap = 1, LastUpdate = DateTime.Now };
+
+        _mockRepo.Setup(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+        _financialServiceMock.Setup(x => x.GetFullStock(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Stock?)null);
+
+
+        Func<Task> act = async () => await _service.GetOrCreateStockAsync(stockSymbol, CancellationToken.None);
+
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Can't find stock or you dont have access to it");
+
+        _mockRepo.Verify(x => x.GetBySymbol(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _financialServiceMock.Verify(x => x.GetFullStock(stockSymbol, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _mockRepo.Verify(x => x.CreateAsync(stock, It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }
