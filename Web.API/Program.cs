@@ -15,6 +15,8 @@ using Web.API.Middleware;
 using Web.API.Models;
 using Web.API.Repository;
 using Web.API.Services;
+using Scrutor;
+using Web.API.Services.Decorators;
 
 namespace Web.API
 {
@@ -111,6 +113,11 @@ namespace Web.API
                 };
             });
 
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration.GetConnectionString("Redis");
+            });
+
             // Dependency injection
             builder.Services.AddScoped<IStockRepository, StockRepository>();
             builder.Services.AddScoped<ICommentsRepository, CommentRepository>();
@@ -118,7 +125,10 @@ namespace Web.API
             builder.Services.AddScoped<IPorrfolioRepository, PortfolioRepository>();
 
             builder.Services.AddScoped<ITokenService, TokenService>();
+
             builder.Services.AddScoped<IStockService, StockService>();
+            builder.Services.Decorate<IStockService, CachedStockService>();
+
             builder.Services.AddScoped<IPorfolioService, PortfolioService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
@@ -143,6 +153,26 @@ namespace Web.API
             app.UseAuthorization();
 
             app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<ApplicationDBContext>();
+
+                    if (context.Database.GetPendingMigrations().Any())
+                    {
+                        context.Database.Migrate();
+                        Console.WriteLine("Міграції успішно застосовані.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Помилка під час міграції: {ex.Message}");
+                }
+            }
+
 
             app.Run();
         }
