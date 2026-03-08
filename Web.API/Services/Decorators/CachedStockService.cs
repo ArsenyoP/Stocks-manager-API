@@ -20,32 +20,66 @@ namespace Web.API.Services.Decorators
 
         public bool CheackIsFresh(Stock stock)
         {
-            throw new NotImplementedException();
+            return _inner.CheackIsFresh(stock);
         }
 
-        public Task<StockDto> Create(CreateStockRequestDto stockDto, CancellationToken ct)
+        public async Task<StockDto> Create(CreateStockRequestDto stockDto, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var createdStockDto = await _inner.Create(stockDto, ct);
+
+            if (createdStockDto != null)
+            {
+                var symbolUpper = createdStockDto.Symbol.ToUpper();
+                string key = $"stock-{symbolUpper}";
+
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    SlidingExpiration = TimeSpan.FromMinutes(3)
+                };
+
+                await _cache.SetStringAsync(key, JsonSerializer.Serialize(createdStockDto), options);
+            }
+
+            return createdStockDto;
         }
 
-        public Task<StockDto?> CreateFromApi(string symbol, CancellationToken ct)
+        public async Task<StockDto?> CreateFromApi(string symbol, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            return await _inner.CreateFromApi(symbol, ct);
         }
 
-        public Task Delete(string symbol, CancellationToken ct)
+        public async Task Delete(string symbol, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            await _inner.Delete(symbol, ct);
+
+            string key = $"stock-{symbol.ToUpper()}";
+            await _cache.RemoveAsync(key, ct);
         }
 
-        public Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct = default)
+        public async Task<List<StockDto>> GetAllAsync(QueryObject query, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            return await _inner.GetAllAsync(query, ct);
         }
 
-        public Task<StockDto?> GetById(int id, CancellationToken ct = default)
+        public async Task<StockDto?> GetById(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var stockDto = await _inner.GetById(id, ct);
+
+            if (stockDto == null)
+            {
+                return null;
+            }
+
+            string key = $"stock-{stockDto.Symbol.ToUpper()}";
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            };
+
+            await _cache.SetStringAsync(key, JsonSerializer.Serialize(stockDto), options, ct);
+            return stockDto;
         }
 
         public async Task<StockDto?> GetBySymbol(string symbol, CancellationToken ct)
@@ -55,7 +89,11 @@ namespace Web.API.Services.Decorators
             var cachedData = await _cache.GetStringAsync(key, ct);
             if (!string.IsNullOrEmpty(cachedData))
             {
-                return JsonSerializer.Deserialize<StockDto>(cachedData);
+                var deserializedData = JsonSerializer.Deserialize<StockDto>(cachedData);
+                if (deserializedData != null)
+                {
+                    return deserializedData;
+                }
             }
 
             var stockDto = await _inner.GetBySymbol(symbol, ct);
@@ -72,20 +110,42 @@ namespace Web.API.Services.Decorators
             return stockDto;
         }
 
-
-        public Task<StockDto> GetOrCreateStockAsync(string symbol, CancellationToken ct)
+        public async Task<StockDto> GetOrCreateStockAsync(string symbol, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var stockDto = await _inner.GetOrCreateStockAsync(symbol, ct);
+
+            string key = $"stock-{stockDto.Symbol.ToUpper()}";
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            };
+
+            await _cache.SetStringAsync(key, JsonSerializer.Serialize(stockDto), options, ct);
+            return stockDto;
         }
 
-        public Task<StockDto?> RefreshStock(Stock stock, CancellationToken ct)
+        public async Task<StockDto?> RefreshStock(Stock stock, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            return await _inner.RefreshStock(stock, ct);
         }
 
-        public Task<StockDto> Update(string symbol, UpdateStockRequestDto updateStock, CancellationToken ct)
+        public async Task<StockDto> Update(string symbol, UpdateStockRequestDto updateStock, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var stockDto = await _inner.Update(symbol, updateStock, ct);
+
+            string oldKey = $"stock-{symbol.ToUpper()}";
+            await _cache.RemoveAsync(oldKey, ct);
+
+            string key = $"stock-{stockDto.Symbol.ToUpper()}";
+
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                SlidingExpiration = TimeSpan.FromMinutes(3)
+            };
+            await _cache.SetStringAsync(key, JsonSerializer.Serialize(stockDto), options, ct);
+            return stockDto;
         }
     }
 }
