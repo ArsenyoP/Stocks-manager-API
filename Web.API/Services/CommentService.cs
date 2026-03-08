@@ -1,8 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Web.API.Dtos.Comment;
+using Web.API.Dtos.Stock;
+using Web.API.Exceptions;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
 using Web.API.Mappers;
+using Web.API.Models;
 
 namespace Web.API.Services
 {
@@ -65,26 +69,8 @@ namespace Web.API.Services
 
         public async Task<CommentDto> CreateComment(string symbol, string AppUserId, CreateCommentDto commentDto, CancellationToken ct)
         {
-            var symbolUpper = symbol.ToUpper();
-            var stockId = await _stockRepo.GetIdBySymbolAsync(symbolUpper, ct);
-
-            var commentModel = commentDto.ToCommentFromCreate(stockId);
-            commentModel.AppUserId = AppUserId;
-
-            var createdCommentModel = await _commentsRepo.CreateCommentAsync(commentModel, ct);
-
-            if (createdCommentModel == null)
-            {
-                _logger.LogError("Error while creating comment: {commentDto}",
-                   commentDto);
-                throw new KeyNotFoundException("Error while creating comment");
-            }
-
-            _logger.LogInformation("User with ID {UserIDd} created comment for stock with ID {StockId}",
-                AppUserId, stockId);
-
-            createdCommentModel.AppUser = await _accountService.GetById(AppUserId);
-            return createdCommentModel.ToCommentDto();
+            var stockId = await EnsureStockExists(symbol, ct);
+            return await SaveComment(stockId, AppUserId, commentDto, ct);
         }
 
         public async Task<CommentDto> UpdateComment(int id, UpdateCommentDto updateDto, CancellationToken ct)
@@ -120,6 +106,44 @@ namespace Web.API.Services
             _logger.LogInformation("Deleted comment with ID {CommentId}",
                     id);
             await _commentsRepo.DeleteAsync(commentModel, ct);
+        }
+
+
+
+        //private methods
+        private async Task<int> EnsureStockExists(string symbol, CancellationToken ct)
+        {
+            var symbolUpper = symbol.ToUpper();
+
+            var stock = await _stockRepo.GetBySymbol(symbolUpper, ct);
+
+            if (stock != null)
+            {
+                return stock.ID;
+            }
+
+            var stockDto = await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
+
+            if (stockDto == null)
+            {
+                throw new NotFoundException("Can't create comment for unexisting stock");
+            }
+            return stockDto.ID;
+        }
+
+        private async Task<CommentDto> SaveComment(int stockId, string UserId, CreateCommentDto commentDto, CancellationToken ct)
+        {
+            var comment = commentDto.ToCommentFromCreate(stockId);
+            comment.AppUser = await _accountService.GetById(UserId);
+
+            var createdComment = await _commentsRepo.CreateCommentAsync(comment, ct);
+
+            if (createdComment == null)
+            {
+                throw new InvalidOperationException($"Failed to create comment for stock ID {stockId}");
+            }
+            _logger.LogInformation("User {UserId} created comment for stock {StockId}", UserId, stockId);
+            return createdComment.ToCommentDto();
         }
     }
 }
