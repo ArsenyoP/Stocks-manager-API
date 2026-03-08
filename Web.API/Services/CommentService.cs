@@ -12,14 +12,16 @@ namespace Web.API.Services
         private readonly IStockRepository _stockRepo;
         private readonly ILogger<CommentService> _logger;
         private readonly IStockService _stockService;
+        private readonly IAccountService _accountService;
 
         public CommentService(ICommentsRepository commentsRepo, IStockRepository stockRepo,
-            ILogger<CommentService> logger, IStockService stockService)
+             ILogger<CommentService> logger, IStockService stockService, IAccountService accountService)
         {
             _commentsRepo = commentsRepo;
             _stockRepo = stockRepo;
             _logger = logger;
             _stockService = stockService;
+            _accountService = accountService;
         }
 
         public async Task<List<CommentDto>> GetAll(int page, CancellationToken ct)
@@ -64,14 +66,6 @@ namespace Web.API.Services
         public async Task<CommentDto> CreateComment(string symbol, string AppUserId, CreateCommentDto commentDto, CancellationToken ct)
         {
             var symbolUpper = symbol.ToUpper();
-            //провірка в API
-            if (!await _stockRepo.StockExistsInDb(symbolUpper, ct))
-            {
-                await _stockService.GetOrCreateStockAsync(symbolUpper, ct);
-                _logger.LogInformation("Created comment for stock with symbol {symbolUpper}",
-                    symbolUpper);
-            }
-
             var stockId = await _stockRepo.GetIdBySymbolAsync(symbolUpper, ct);
 
             var commentModel = commentDto.ToCommentFromCreate(stockId);
@@ -89,6 +83,7 @@ namespace Web.API.Services
             _logger.LogInformation("User with ID {UserIDd} created comment for stock with ID {StockId}",
                 AppUserId, stockId);
 
+            createdCommentModel.AppUser = await _accountService.GetById(AppUserId);
             return createdCommentModel.ToCommentDto();
         }
 

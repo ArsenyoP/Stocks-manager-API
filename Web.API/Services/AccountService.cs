@@ -70,7 +70,6 @@ namespace Web.API.Services
         public async Task<NewUserDto> LoginUser(LoginDto loginDto, CancellationToken ct)
         {
             var user = await _userManager.FindByNameAsync(loginDto.UserName);
-
             if (user == null)
             {
                 _logger.LogWarning("Login failed: User with username {UserName} not found", loginDto.UserName);
@@ -93,6 +92,11 @@ namespace Web.API.Services
                 Email = user.Email,
                 Token = _tokenService.CreateToken(user)
             };
+        }
+
+        public async Task<AppUser?> GetById(string id)
+        {
+            return await _userManager.FindByIdAsync(id);
         }
     }
 }
