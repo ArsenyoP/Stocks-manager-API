@@ -142,6 +142,8 @@ namespace Web.API
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
 
+            builder.Services.AddSingleton<IRedisCacheService, RedisCacheService>();
+
 
             var app = builder.Build();
 
