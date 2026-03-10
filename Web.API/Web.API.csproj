@@ -44,7 +44,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Services\Background Services\" />
 	  <Folder Include="Validators\Account\" />
 	</ItemGroup>
 
