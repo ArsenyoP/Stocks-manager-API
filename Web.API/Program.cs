@@ -17,6 +17,7 @@ using Web.API.Repository;
 using Web.API.Services;
 using Scrutor;
 using Web.API.Services.Decorators;
+using StackExchange.Redis;
 
 namespace Web.API
 {
@@ -38,6 +39,13 @@ namespace Web.API
                 configuration.ReadFrom.Configuration(context.Configuration));
 
             builder.Services.AddHttpClient<IFinancialService, FinancialService>();
+
+
+            builder.Services.AddStackExchangeRedisCache(options =>
+                options.Configuration = builder.Configuration.GetConnectionString("Redis"));
+
+            builder.Services.AddSingleton<IConnectionMultiplexer>(
+                ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")));
 
             builder.Services.AddSwaggerGen(option =>
             {
