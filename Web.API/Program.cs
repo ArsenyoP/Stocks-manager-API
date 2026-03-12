@@ -19,6 +19,7 @@ using Scrutor;
 using Web.API.Services.Decorators;
 using StackExchange.Redis;
 using Web.API.Services.Background_Services;
+using Hangfire;
 
 namespace Web.API
 {
@@ -127,6 +128,16 @@ namespace Web.API
                 options.Configuration = builder.Configuration.GetConnectionString("Redis");
             });
 
+            builder.Services.AddHangfire(config =>
+            {
+                config.UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            builder.Services.AddHangfireServer();
+
+
             // Dependency injection
             builder.Services.AddScoped<IStockRepository, StockRepository>();
             builder.Services.AddScoped<ICommentsRepository, CommentRepository>();
@@ -163,6 +174,8 @@ namespace Web.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseHangfireDashboard();
 
             app.MapControllers();
 
