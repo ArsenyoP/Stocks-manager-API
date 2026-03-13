@@ -20,6 +20,7 @@ using Web.API.Services.Decorators;
 using StackExchange.Redis;
 using Hangfire;
 using Web.API.Extensions;
+using Web.API.Models.Settings;
 
 namespace Web.API
 {
@@ -136,7 +137,7 @@ namespace Web.API
             });
 
             builder.Services.AddHangfireServer();
-           
+
 
 
             // Dependency injection
@@ -151,11 +152,18 @@ namespace Web.API
             builder.Services.Decorate<IStockService, CachedStockService>();
 
             builder.Services.AddScoped<IPorfolioService, PortfolioService>();
+
             builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.Decorate<IAccountService, EmailNotificationAccountService>();
+
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
 
             builder.Services.AddSingleton<IRedisCacheService, RedisCacheService>();
+
+            builder.Services.Configure<EmailSettings>(
+                builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddTransient<IEmailService, EmailService>();
 
 
             var app = builder.Build();
