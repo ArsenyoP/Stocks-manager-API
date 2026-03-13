@@ -18,8 +18,8 @@ using Web.API.Services;
 using Scrutor;
 using Web.API.Services.Decorators;
 using StackExchange.Redis;
-using Web.API.Services.Background_Services;
 using Hangfire;
+using Web.API.Extensions;
 
 namespace Web.API
 {
@@ -136,6 +136,7 @@ namespace Web.API
             });
 
             builder.Services.AddHangfireServer();
+           
 
 
             // Dependency injection
@@ -153,7 +154,6 @@ namespace Web.API
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
-            builder.Services.AddHostedService<CacheCleanupBackgroundJob>();
 
             builder.Services.AddSingleton<IRedisCacheService, RedisCacheService>();
 
@@ -176,6 +176,7 @@ namespace Web.API
             app.UseAuthorization();
 
             app.UseHangfireDashboard();
+            app.UseHangfireJobs();
 
             app.MapControllers();
 
