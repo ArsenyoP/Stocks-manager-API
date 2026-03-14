@@ -2,6 +2,7 @@
 using Web.API.Dtos.Account;
 using Web.API.Helpers;
 using Web.API.Interfaces.IServices;
+using Web.API.Jobs;
 using Web.API.Models;
 
 namespace Web.API.Services.Decorators
@@ -27,11 +28,8 @@ namespace Web.API.Services.Decorators
             var userDto = await _inner.CreateNewUser(register, ct);
             try
             {
-                _jobClient.Enqueue<IEmailService>(x =>
-                x.SendAsync(register.Email,
-               "Ласкаво просимо до StockApp! 🚀",
-               EmailTemplates.WelcomeEmaiil(register.UserName),
-               CancellationToken.None));
+                _jobClient.Enqueue<SendWelcomeEmailJob>(x =>
+                     x.ExecuteAsync(register.Email, register.UserName));
                 _logger.LogInformation("Background job for sending emails has been executed");
             }
             catch (Exception ex)
