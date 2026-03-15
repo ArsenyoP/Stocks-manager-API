@@ -21,6 +21,7 @@ using StackExchange.Redis;
 using Hangfire;
 using Web.API.Extensions;
 using Web.API.Models.Settings;
+using Web.API.Helpers;
 
 namespace Web.API
 {
@@ -211,7 +212,11 @@ namespace Web.API
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseHangfireDashboard();
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
+            });
+
             app.UseHangfireJobs();
 
             app.MapControllers();
