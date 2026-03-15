@@ -22,6 +22,7 @@ namespace Web.API.Tests.Services
         private readonly Mock<IStockRepository> _stockRepoMock;
         private readonly Mock<ILogger<CommentService>> _loggerMock;
         private readonly Mock<IStockService> _stockServiceMock;
+        private readonly Mock<IAccountService> _accountServiceMock;
         private readonly CommentService _commentService;
 
         public CommentServiceTests()
@@ -30,7 +31,8 @@ namespace Web.API.Tests.Services
             _stockRepoMock = new Mock<IStockRepository>();
             _loggerMock = new Mock<ILogger<CommentService>>();
             _stockServiceMock = new Mock<IStockService>();
-            _commentService = new CommentService(_commentsRepoMock.Object, _stockRepoMock.Object, _loggerMock.Object, _stockServiceMock.Object);
+            _accountServiceMock = new Mock<IAccountService>();
+            _commentService = new CommentService(_commentsRepoMock.Object, _stockRepoMock.Object, _loggerMock.Object, _stockServiceMock.Object, _accountServiceMock.Object);
         }
 
         private List<Comment> GetTestComments()

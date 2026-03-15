@@ -22,6 +22,8 @@ using Hangfire;
 using Web.API.Extensions;
 using Web.API.Models.Settings;
 using Web.API.Helpers;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace Web.API
 {
@@ -171,6 +173,34 @@ namespace Web.API
                 builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddPolicy("fixed", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            Window = TimeSpan.FromSeconds(20),
+                            PermitLimit = 20,
+                            QueueLimit = 0
+                        }));
+
+
+                options.AddPolicy("auth-limiter", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: $"auth_{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            Window = TimeSpan.FromSeconds(20),
+                            PermitLimit = 5,
+                            QueueLimit = 0
+                        }));
+
+            });
+
+
 
             var app = builder.Build();
 
@@ -209,6 +239,8 @@ namespace Web.API
 
             app.UseHttpsRedirection();
 
+            app.UseRateLimiter();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -218,11 +250,7 @@ namespace Web.API
             });
 
             app.UseHangfireJobs();
-
             app.MapControllers();
-
-
-
 
             app.Run();
         }

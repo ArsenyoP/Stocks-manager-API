@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Web.API.Data;
@@ -14,6 +15,7 @@ using Web.API.Services;
 
 namespace Web.API.Controllers
 {
+    [EnableRateLimiting("fixed")]
     [Route("api/stock")]
     [ApiController]
 
@@ -28,6 +30,7 @@ namespace Web.API.Controllers
             _financialService = financialService;
         }
 
+        [EnableRateLimiting("fixed")]
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query, CancellationToken ct)
         {

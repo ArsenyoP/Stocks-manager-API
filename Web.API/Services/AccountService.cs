@@ -73,7 +73,7 @@ namespace Web.API.Services
             var user = await _userManager.FindByNameAsync(loginDto.UserName);
             if (user == null)
             {
-                _logger.LogWarning("Login failed: User with username {UserName} not found", loginDto.UserName);
+                _logger.LogInformation("Login failed: User with username {UserName} not found", loginDto.UserName);
                 throw new IdentityException("Username or password incorrect");
             }
 
@@ -81,7 +81,7 @@ namespace Web.API.Services
 
             if (!passwordCheckResult.Succeeded)
             {
-                _logger.LogWarning("Login failed: Incorrect password for user {UserName}", loginDto.UserName);
+                _logger.LogInformation("Login failed: Incorrect password for user {UserName}", loginDto.UserName);
                 throw new IdentityException("Username or password incorrect");
             }
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Web.API.Extensions;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
@@ -9,6 +10,8 @@ using Web.API.Models;
 
 namespace Web.API.Controllers
 {
+    [EnableRateLimiting("fixed")]
+
     [Route("api/portfolio")]
     [ApiController]
     public class PortfolioController : ControllerBase

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Web.API.Dtos.Comment;
 using Web.API.Extensions;
 using Web.API.Interfaces;
@@ -10,6 +11,8 @@ using Web.API.Models;
 
 namespace Web.API.Controllers
 {
+    [EnableRateLimiting("fixed")]
+
     [Route("api/comments")]
     [ApiController]
 

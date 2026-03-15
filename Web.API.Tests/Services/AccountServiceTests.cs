@@ -63,7 +63,7 @@ namespace Web.API.Tests.Services
                 .ReturnsAsync(successIdentityResult);
 
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<AppUser>()))
-                .Returns("Test_Token_JWT");
+                .ReturnsAsync("Test_Token_JWT");
 
 
             var result = await _accountService.CreateNewUser(registerDto, new CancellationToken { });
@@ -130,7 +130,7 @@ namespace Web.API.Tests.Services
                 .ReturnsAsync(SignInResult.Success);
 
             _tokenServiceMock.Setup(x => x.CreateToken(user))
-                .Returns("JWT_TEST_TOKEN");
+                .ReturnsAsync("JWT_TEST_TOKEN");
 
 
             var result = await _accountService.LoginUser(loginDto, CancellationToken.None);
