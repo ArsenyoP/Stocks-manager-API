@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Web.API.Data;
 
@@ -11,9 +12,11 @@ using Web.API.Data;
 namespace Web.API.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260314200015_SeedAdminUser")]
+    partial class SeedAdminUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,13 +54,13 @@ namespace Web.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "eb4b3260-05fb-470c-af9f-b9e9b9bcd85e",
+                            Id = "bf171b92-9b8b-4eaf-8b68-ee51e64841de",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "3474648c-112d-460c-bc8a-61be046b3078",
+                            Id = "ab4c6115-25ed-49ba-a054-0583b78cb484",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -148,13 +151,6 @@ namespace Web.API.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = "f5b7c8d9-e0a1-4b2c-3d4e-5f6a7b8c9d0e",
-                            RoleId = "3474648c-112d-460c-bc8a-61be046b3078"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -239,24 +235,6 @@ namespace Web.API.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "f5b7c8d9-e0a1-4b2c-3d4e-5f6a7b8c9d0e",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "b2c3d4e5-f6a7-8901-bcde-111111111111",
-                            Email = "arsenyo198510@gmail.com",
-                            EmailConfirmed = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "ARSENYO198510@GMAIL.COM",
-                            NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEG8u0LViCiVRdh60FgU7usvJyNW4Fh1IpPE1srnkarlpf15mhjwgrx+tOoynMpWxEg==",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "a1b2c3d4-e5f6-7890-abcd-000000000000",
-                            TwoFactorEnabled = false,
-                            UserName = "admin"
-                        });
                 });
 
             modelBuilder.Entity("Web.API.Models.Comment", b =>

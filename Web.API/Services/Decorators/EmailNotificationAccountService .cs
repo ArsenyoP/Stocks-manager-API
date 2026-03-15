@@ -23,9 +23,9 @@ namespace Web.API.Services.Decorators
             _jobClient = jobClient;
         }
 
-        public async Task<NewUserDto> CreateNewUser(RegisterDto register, CancellationToken ct)
+        public async Task<NewUserDto> CreateNewUser(RegisterDto register, CancellationToken ct, string role = "User")
         {
-            var userDto = await _inner.CreateNewUser(register, ct);
+            var userDto = await _inner.CreateNewUser(register, ct, role);
             try
             {
                 _jobClient.Enqueue<SendWelcomeEmailJob>(x =>
@@ -38,6 +38,8 @@ namespace Web.API.Services.Decorators
             }
             return userDto;
         }
+
+
 
         public async Task<AppUser?> GetById(string id)
         {

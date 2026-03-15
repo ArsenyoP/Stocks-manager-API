@@ -26,7 +26,7 @@ namespace Web.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -129,11 +129,16 @@ namespace Web.API
                 options.Configuration = builder.Configuration.GetConnectionString("Redis");
             });
 
+
+            var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+            var hangfireConnection = System.Text.RegularExpressions.Regex
+                .Replace(defaultConnection, @"Database=[^;]+;", "Database=master;");
+
             builder.Services.AddHangfire(config =>
             {
                 config.UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"));
+                    .UseRecommendedSerializerSettings()
+                    .UseSqlServerStorage(hangfireConnection);
             });
 
             builder.Services.AddHangfireServer();
@@ -168,6 +173,29 @@ namespace Web.API
 
             var app = builder.Build();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var retries = 10;
+                while (retries > 0)
+                {
+                    try
+                    {
+                        var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+                        context.Database.Migrate();
+                        Console.WriteLine("Database is ready and migrated.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        retries--;
+                        Console.WriteLine($"Waiting for DB... Retries left: {retries}. Error: {ex.Message}");
+                        await Task.Delay(5000);
+                        if (retries == 0) throw;
+                    }
+                }
+            }
+
+
             app.UseGlobalExceptions();
             app.UseRequestTiming();
 
@@ -188,24 +216,7 @@ namespace Web.API
 
             app.MapControllers();
 
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<ApplicationDBContext>();
 
-                    if (context.Database.GetPendingMigrations().Any())
-                    {
-                        context.Database.Migrate();
-                        Console.WriteLine("Міграції успішно застосовані.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Помилка під час міграції: {ex.Message}");
-                }
-            }
 
 
             app.Run();

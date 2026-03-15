@@ -73,21 +73,50 @@ namespace Web.API.Data
                 .HasDatabaseName("IX_Stocks_LastDiv_MarketCap");
 
 
+            const string adminRoleId = "3474648c-112d-460c-bc8a-61be046b3078";
+            const string userRoleId = "eb4b3260-05fb-470c-af9f-b9e9b9bcd85e";
 
             List<IdentityRole> roles = new List<IdentityRole>
             {
                 new IdentityRole
                 {
+                    Id = userRoleId,
                     Name = "User",
                     NormalizedName = "USER"
                 },
                 new IdentityRole
                 {
+                    Id = adminRoleId,
                     Name = "Admin",
                     NormalizedName = "ADMIN"
                 }
             };
             builder.Entity<IdentityRole>().HasData(roles);
+
+            const string adminId = "f5b7c8d9-e0a1-4b2c-3d4e-5f6a7b8c9d0e";
+
+            var admin = new AppUser
+            {
+                Id = adminId,
+                UserName = "admin",
+                NormalizedUserName = "ADMIN",
+                Email = "arsenyo198510@gmail.com",
+                NormalizedEmail = "ARSENYO198510@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = "a1b2c3d4-e5f6-7890-abcd-000000000000",
+                ConcurrencyStamp = "b2c3d4e5-f6a7-8901-bcde-111111111111"
+            };
+
+            admin.PasswordHash = new PasswordHasher<AppUser>().HashPassword(admin, "1234");
+
+            builder.Entity<AppUser>().HasData(admin);
+
+            builder.Entity<IdentityUserRole<string>>().HasData(new IdentityUserRole<string>
+            {
+                RoleId = adminRoleId,
+                UserId = adminId
+            });
+
         }
     }
 }

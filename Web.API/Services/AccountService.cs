@@ -24,8 +24,9 @@ namespace Web.API.Services
             _logger = logger;
         }
 
-        public async Task<NewUserDto> CreateNewUser(RegisterDto register, CancellationToken ct)
+        public async Task<NewUserDto> CreateNewUser(RegisterDto register, CancellationToken ct, string role = "Admin")
         {
+            Console.WriteLine(role); //delete
             var AppUserModel = new AppUser
             {
                 UserName = register.UserName,
@@ -36,17 +37,17 @@ namespace Web.API.Services
 
             if (createdUser.Succeeded)
             {
-                var rolesResult = await _userManager.AddToRoleAsync(AppUserModel, "User");
+                var rolesResult = await _userManager.AddToRoleAsync(AppUserModel, role);
                 if (rolesResult.Succeeded)
                 {
-                    _logger.LogInformation("User: {User} with ID: {UserID} was successfully created",
-                        AppUserModel.UserName, AppUserModel.Id);
+                    _logger.LogInformation("User: {User} with ID: {UserID} was successfully created with role: {role}",
+                        AppUserModel.UserName, AppUserModel.Id, role);
 
                     return new NewUserDto
                     {
                         UserName = AppUserModel.UserName,
                         Email = AppUserModel.Email,
-                        Token = _tokenService.CreateToken(AppUserModel)
+                        Token = await _tokenService.CreateToken(AppUserModel)
                     };
                 }
                 else
@@ -90,7 +91,7 @@ namespace Web.API.Services
             {
                 UserName = user.UserName,
                 Email = user.Email,
-                Token = _tokenService.CreateToken(user)
+                Token = await _tokenService.CreateToken(user)
             };
         }
 

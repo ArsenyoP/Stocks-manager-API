@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Web.API.Dtos.Account;
 using Web.API.Interfaces;
 using Web.API.Interfaces.IServices;
@@ -23,6 +24,14 @@ namespace Web.API.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterDto register, CancellationToken ct)
         {
             var userModel = await _accountService.CreateNewUser(register, ct);
+            return Ok(userModel);
+        }
+
+        [HttpPost("register/admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterDto register, CancellationToken ct)
+        {
+            var userModel = await _accountService.CreateNewUser(register, ct, "Admin");
             return Ok(userModel);
         }
 
